@@ -20,6 +20,7 @@ library(geosphere)
 TERR_mal <- shapefile("data/TERRESTRIAL_MAMMALS/TERRESTRIAL_MAMMALS.shp")
 spp_df_all <- read.csv("result/occ_dataframe_taxon_fixed.csv") 
 
+head(spp_df_all)
 # Total NO. IUCN mammal species  
 length(unique(TERR_mal$binomial))
 
@@ -34,7 +35,7 @@ fun_data_500 <- fun_data %>% filter(BodyMass.Value < 500)
 fun_data_more_than_500 <- fun_data %>% filter(BodyMass.Value >= 500)
 
 # Filter range maps
-
+# sf::
 filter_TERR_mal <- TERR_mal[-grep("Chiroptera", TERR_mal$order_,  ignore.case = T),]   # bats
 # filter_TERR_mal <- filter_TERR_mal[-grep("Cetacea", filter_TERR_mal$order_,  ignore.case = T),]  # no whales, terrestrial only
 filter_TERR_mal <- filter_TERR_mal[-grep("Scandentia", filter_TERR_mal$order_,  ignore.case = T),]  #colugos
@@ -69,7 +70,6 @@ crs(filter_TERR_mal)
 crs(TEAM_BBS_shap)
 
 plot(TEAM_BBS_shap)
-plot(filter_TERR_mal)
 
 croped <- rgeos::intersect(filter_TERR_mal, TEAM_BBS_shap)
 
