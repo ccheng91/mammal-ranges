@@ -1,4 +1,4 @@
-# #Identify species that's not matched in IUCN range map
+#Identify species that's not matched in IUCN range map
 
 # load data
 library(sf)
@@ -16,7 +16,6 @@ terr_mal_new <- st_read("data/MAMMALS_TERRESTRIAL_ONLY/MAMMALS_TERRESTRIAL_ONLY.
 # Range of freshwater mammal downloaded in 2021
 # This can be download at (https://www.iucnredlist.org/resources/spatial-data-download)
 terr_mal_water <- st_read("data/MAMMALS_FRESHWATER/MAMMALS_FRESHWATER.shp")
-
 
 # Step 1. - match names
 

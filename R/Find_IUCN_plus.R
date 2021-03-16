@@ -1,5 +1,5 @@
 
-# Factors affecting mismatch bwteen IUCN range map and camera trap ourrance data
+# Factors affecting mismatch between IUCN range maps and camera trap occurrences of mammal
 
 # Find species that:
 # IUCN + , camera +
@@ -8,21 +8,25 @@
 # IUCN + , camera +
 # IUCN - , camera +
 
-#load pacakge
+#load package
 rm(list=ls(all=TRUE))
 library(ggplot2)
-library(raster)
+library(sf)
 library(dplyr)
 library(geosphere)
 
 # Read data
 
-TERR_mal <- shapefile("data/TERRESTRIAL_MAMMALS/TERRESTRIAL_MAMMALS.shp")
+TERR_mal <- st_read("data/MAMMALS_TERRESTRIAL_ONLY/MAMMALS_TERRESTRIAL_ONLY.shp")
+terr_mal_water <- st_read("data/MAMMALS_FRESHWATER/MAMMALS_FRESHWATER.shp")
+terr_mal_new <- rbind(TERR_mal,terr_mal_water)
+
+# Camera trap data  
 spp_df_all <- read.csv("result/occ_dataframe_taxon_fixed.csv") 
 
 head(spp_df_all)
 # Total NO. IUCN mammal species  
-length(unique(TERR_mal$binomial))
+length(unique(terr_mal_new$binomial))
 
 # Load functional trait data
 fun_data <- read.delim("data/MamFuncDat.txt")
@@ -35,25 +39,25 @@ fun_data_500 <- fun_data %>% filter(BodyMass.Value < 500)
 fun_data_more_than_500 <- fun_data %>% filter(BodyMass.Value >= 500)
 
 # Filter range maps
-# sf::
-filter_TERR_mal <- TERR_mal[-grep("Chiroptera", TERR_mal$order_,  ignore.case = T),]   # bats
-# filter_TERR_mal <- filter_TERR_mal[-grep("Cetacea", filter_TERR_mal$order_,  ignore.case = T),]  # no whales, terrestrial only
-filter_TERR_mal <- filter_TERR_mal[-grep("Scandentia", filter_TERR_mal$order_,  ignore.case = T),]  #colugos
-filter_TERR_mal <- filter_TERR_mal[-grep("Macroscelidea", filter_TERR_mal$order_,  ignore.case = T),]   # shrew opossum
-filter_TERR_mal <- filter_TERR_mal[-grep("Paucituberculata", filter_TERR_mal$order_,  ignore.case = T),]  # elephant shrew
-filter_TERR_mal <- filter_TERR_mal[-grep("Microbiotheria", filter_TERR_mal$order_,  ignore.case = T),]  #colocolo opossum 1 speices
-# filter_TERR_mal <- filter_TERR_mal[-grep("Sirenia", filter_TERR_mal$order_,  ignore.case = T),]  # no manatee, terrestrial only
-filter_TERR_mal <- filter_TERR_mal[-grep("Eulipotyphla", filter_TERR_mal$order_,  ignore.case = T),] 
+# By order
+terr_mal_new$order_ <- stringr::str_to_title(terr_mal_new$order_)
+filter_TERR_mal <-  terr_mal_new %>% 
+  filter(order_ != "Chiroptera") %>% # bats
+  filter(order_ != "Scandentia") %>% # Colugos
+  filter(order_ != "Macroscelidea") %>% # Shrew opossum
+  filter(order_ != "Paucituberculata") %>% # elephant shrew
+  filter(order_ != "Microbiotheria") %>% # colocolo opossum 1 speices
+  filter(order_ != "Sirenia") %>% # manatee
+  filter(order_ != "Eulipotyphla") 
 
-filter_TERR_mal <- filter_TERR_mal[!(filter_TERR_mal$binomial %in% fun_data_500$Scientific),]
+# By body mass
+`%notin%` <- Negate(`%in%`) # opposite of %in% 
+small_mammal <- unique(fun_data_500$Scientific)
 
-#IUCN_flitered <- filter_TERR_mal$binomial[filter_TERR_mal$binomial %in% fun_data_more_than_500$Scientific]
-IUCN_flitered_unique <- unique(filter_TERR_mal$binomial)
-length(IUCN_flitered_unique)
-which( fun_data_more_than_500$Scientific == "Canis rufus")
+filter_TERR_mal <- filter_TERR_mal %>%
+  filter(binomial %notin% small_mammal) 
 
-
-# Caculate the IUCN vs camera match type
+# Calculate the IUCN vs camera match type
 # Use TEAM data as an example
 
 TEAM_BBS <- spp_df_all[grep("TEAMS_CT-BBS", spp_df_all$deploymentID),]
