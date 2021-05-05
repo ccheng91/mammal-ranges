@@ -89,3 +89,53 @@ spp_df_all <- spp_df_all %>%
   filter( speciesScientificName !=  "Sagittarius serpentarius")
  write.csv(spp_df_all,"result/occ_dataframe_taxon_fixed.csv",row.names = F)
 
+
+## Everything name should sync with IUCN name Including Elton & PanTHERIA name 
+ 
+# need a function that everytime that there's a no match 
+
+# Make a taxa link table
+ 
+All_IUCN_names <-  data.frame(Scientific=unique(c(terr_mal_new$binomial, terr_mal_water$binomial)))
+ 
+All_IUCN_names <- All_IUCN_names %>% mutate(id = get_ids(Scientific, "itis")) %>% 
+                                     mutate(accepted_name = get_names(id, "itis"))
+
+All_IUCN_names <- All_IUCN_names %>% mutate(id_wd = get_ids(Scientific, "wd", version=2019)) %>%
+                                     mutate(accepted_name_wd = get_names(id_wd, "wd", version=2019))
+
+head(All_IUCN_names)
+
+# Fix names more than one match for ITIS
+need_check <- filter_name('Camelus ferus','itis')  %>%
+  mutate(acceptedNameUsage = get_names(acceptedNameUsageID)) %>% 
+  select(scientificName, taxonomicStatus, acceptedNameUsage, acceptedNameUsageID)
+
+head(need_check)
+
+All_IUCN_names[All_IUCN_names$Scientific == 'Camelus ferus',]
+All_IUCN_names[All_IUCN_names$Scientific == 'Camelus ferus',2] <- need_check$acceptedNameUsageID[1]
+All_IUCN_names[All_IUCN_names$Scientific == 'Camelus ferus',3] <- need_check$acceptedNameUsage[1]
+
+# Fix names more than one match for WD
+
+need_check_2 <- filter_name(c('Baiyankamys shawmayeri','Baiyankamys habbema'),'wd',version = 2019) %>%
+  mutate(acceptedNameUsage = get_names(acceptedNameUsageID,'wd',version = 2019)) %>% 
+  select(scientificName, taxonomicStatus, acceptedNameUsage, acceptedNameUsageID)
+
+head(need_check_2)
+
+All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys shawmayeri',]
+All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys shawmayeri',4] <- need_check_2$acceptedNameUsageID[1]
+All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys shawmayeri',5] <- need_check_2$acceptedNameUsage[1]
+
+All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys habbema',]
+All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys habbema',4] <- need_check_2$acceptedNameUsageID[3]
+All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys habbema',5] <- need_check_2$acceptedNameUsage[3]
+
+
+
+
+
+
+
