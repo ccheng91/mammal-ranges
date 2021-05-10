@@ -66,7 +66,7 @@ head(panth_data)
 elton_mam <- elton_trait %>% dplyr::select(Scientific) %>% mutate(id = get_ids(Scientific, "itis")) %>% 
                              mutate(accepted_name = get_names(id, "itis"))
 
-need_filter_el <- dplyr::filter_name("Spermophilus saturatus", "itis") %>% 
+need_filter_el <- taxadb::::filter_name("Spermophilus saturatus", "itis") %>% 
   mutate(acceptedNameUsage = get_names(acceptedNameUsageID)) %>% 
   select(scientificName, taxonomicStatus, acceptedNameUsage, acceptedNameUsageID)
 
@@ -248,7 +248,7 @@ check_one_by_one$Scientific
 # "Aotus zonalis" == "Aotus lemurinus"
 elton_mam[which(elton_mam$Scientific == "Aotus lemurinus"),]
 
-#"Bassaricyon medius" == "Bassariscyon alleni"
+#"Bassaricyon medius" == "Bassaricyon alleni"
 elton_mam[which(elton_mam$Scientific == "Bassaricyon alleni"),]
 
 # "Alouatta discolor" == "Alouatta belzebul"
@@ -367,9 +367,6 @@ elton_mam[which(elton_mam$Scientific == "Micoureus alstoni"),]
 elton_mam[which(elton_mam$Scientific == "Makalata occasius"),]
 
 
-
-fixed_anchor <- c()
-
 Scientific_names  <- c("Aotus zonalis","Bassaricyon medius", "Alouatta discolor",  "Pithecia chrysocephala" , "Bos gaurus", "Piliocolobus oustaleti",
 "Eulemur rufifrons","Avahi peyrierasi", "Cephalophus harveyi",  "Acomys ngurui", "Muntiacus montanus",       
 "Neofelis diardi" ,  "Herpailurus yagouaroundi","Canis lupaster",          
@@ -381,13 +378,13 @@ Scientific_names  <- c("Aotus zonalis","Bassaricyon medius", "Alouatta discolor"
 "Monodelphis ronaldi","Muntiacus vaginalis", "Microgale majori","Tragelaphus oryx", "Pithecia inusta",  "Pattonomys occasius")         
 
 
-anchor <- c("Aotus lemurinus","Bassariscyon alleni","Alouatta belzebul","Pithecia pithecia","Bos frontalis","Piliocolobus rufomitratus",
+anchor <- c("Aotus lemurinus","Bassaricyon alleni","Alouatta belzebul","Pithecia pithecia","Bos frontalis","Piliocolobus rufomitratus",
 "Eulemur rufus" ,"Avahi laniger","Cephalophus natalensis","Acomys spinosissimus","Muntiacus muntjak",
 "Neofelis nebulosa","Puma yagouaroundi","Canis lupus" ,
 "Sylvilagus brasiliensis", "Galerella sanguinea", "Hylomyscus denniae","Manis tetradactyla", 
 "Mazama gouazoubira","Makalata grandis","Dasyprocta leporina", "Cheirogaleus crossleyi","Callicebus brunneus", "Saguinus nigricollis",
 "Dasyprocta leporina", "Hylomyscus denniae","Biswamoyopterus biswasi","Philander opossum","Hylomyscus alleni","Maxomys whiteheadi",
-"Piliocolobus gordonorum","Rhynchocyon cirnei", "Saimiri sciureus", "Micoureus alstoni","Galeopterus variegatus",
+"Piliocolobus gordonorum","Rhynchocyon cirnei", "Saimiri sciureus", "Micoureus alstoni","Galeopterus variegates",
 "Monodelphis adusta","Muntiacus muntjak","Microgale longicaudata","Taurotragus derbianus","Pithecia pithecia","Makalata occasius")
 
 length(Scientific_names)
@@ -397,9 +394,9 @@ anchor_names <- data.frame(Scientific=Scientific_names,anchor=anchor )
 
 anchor_names
 
-write.csv(anchor_names,"result/anchor_names_for_spps_found_no_traits.csv",header=T)
+write.csv(anchor_names,"result/anchor_names_for_spps_found_no_traits.csv",row.names = F)
 
-
+anchor_names <- read.csv("result/anchor_names_for_spps_found_no_traits.csv")
 
 
 

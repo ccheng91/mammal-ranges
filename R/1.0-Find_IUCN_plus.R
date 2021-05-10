@@ -129,7 +129,7 @@ TEAM <- spp_df_all[grep("TEAMS", spp_df_all$deploymentID),]
 
 modelling_df <- data.frame()
 
-for (i in 1:length(TEAM_projectID)) {
+for (i in 1:length(TEAM_projectID)){
   
   three_letter <- substr(TEAM_projectID[i], 7,9)
   TEAM_cam_data <- TEAM[grep(three_letter, TEAM$deploymentID),]
@@ -162,6 +162,10 @@ for (i in 1:length(TEAM_projectID)) {
   modelling_df <- rbind(modelling_df,cam_only_df,both_have_df,IUCN_only_df)
   
 }
+
+nrow(modelling_df)
+modelling_df <- modelling_df %>% dplyr::filter(speciesScientificName != "All_in")
+nrow(modelling_df)
 
 write.csv(modelling_df, "result/modeling_df.csv", row.names = F)
 
