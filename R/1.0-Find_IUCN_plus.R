@@ -25,6 +25,12 @@ terr_mal_new <- rbind(TERR_mal,terr_mal_water)
 # Camera trap data  
 spp_df_all <- read.csv("result/occ_dataframe_taxon_fixed.csv") 
 
+spp_df_all[grep("EMML_SMTB", spp_df_all$deploymentID),]
+
+spp_df_all_proj_id <- read.csv("result/occ_dataframe_with_projectID.csv") %>% dplyr::select(deploymentID,projectID) %>% unique()
+
+spp_df_all <- left_join(spp_df_all, spp_df_all_proj_id, by="deploymentID")
+
 head(spp_df_all)
 # Total NO. IUCN mammal species  
 length(unique(terr_mal_new$binomial))
@@ -62,7 +68,6 @@ filter_TERR_mal <- filter_TERR_mal %>%
 filter_TERR_mal <- filter_TERR_mal %>%
   filter(presence == 1) 
 
-
 # Calculate the IUCN vs camera match type
 # Use TEAM data as an example
 
@@ -74,13 +79,10 @@ shap <- st_read("data/all_in_one_folder_OCT2019/All_area_shape_NOV2020.shp")
 TEAM_shap <- shap[grep("TEAMS", shap$projectID),]
 TEAM_projectID <- unique(TEAM_shap$projectID)
 
-
 TEAM_BBS_shap <- shap[grep("TEAMS_BBS", shap$projectID),]
 
 st_crs(filter_TERR_mal)
 st_crs(TEAM_BBS_shap)
-
-plot(TEAM_BBS_shap)
 
 croped <- st_intersects(filter_TERR_mal, TEAM_BBS_shap, sparse = FALSE)
 
@@ -93,7 +95,7 @@ cam_spp <-  unique(TEAM_BBS$speciesScientificName)
 IUCN_spp <- unique(unique(filter_TERR_mal$binomial[croped]))
 
 both_have <- cam_spp[cam_spp %in% IUCN_spp] 
-cam_only <- cam_spp[!(cam_spp%in%both_have)] 
+cam_only <- cam_spp[!(cam_spp %in% both_have)] 
 IUCN_only <- IUCN_spp[!(IUCN_spp %in% both_have)]
 
 length(both_have)
@@ -117,16 +119,108 @@ modelling_df$projectID <- TEAM_projectID[1]
 head(modelling_df)
 nrow(modelling_df)
 
-trait_data <- fun_data %>% dplyr::select(speciesScientificName=Scientific,Diet.Inv,Diet.PlantO,ForStrat.Value,BodyMass.Value)
+####
+which(spp_df_all$speciesScientificName == "Pekania pennanti")
+####
 
-left_join(modelling_df, trait_data, by="speciesScientificName")
+
+################################
+# loop through all projects ####
+################################
+
+# remove all round projects
+str(shap)
+
+unique(shap$projectID)
+plot(shap[shap$projectID == shap$projectID[2],])
+
+shap$P <- st_length(shap)
+shap$A <- st_area(shap)
+shap$thin_ratio <- as.numeric(4*pi*(shap$A/(shap$P*shap$P)))
+
+shap <- shap %>% filter(thin_ratio < 0.99)
+
+# Total 
+95 + 74
+
+# Okay
+###
+non_round_proj <- shap$projectID 
+
+# remove ALTC
+
+non_round_proj <- non_round_proj[-grep("ALTC",non_round_proj)]
+round_ind <- spp_df_all$projectID %in% non_round_proj
+non_round_cam <- spp_df_all[which(round_ind == T),]
+
+# the loop 
+modelling_df <- data.frame()
 
 
-# loop through all team projects
+for (i in 1:length(non_round_proj)){
+  
+  # Find the camera species 
 
+  cam_data <- non_round_cam[which(non_round_cam$projectID == non_round_proj[i]),]
+  shap_one <- shap[which(shap$projectID ==  non_round_proj[i]),]
+  
+  shap_one$projectID
+  
+  croped <- st_intersects(filter_TERR_mal, shap_one, sparse = FALSE)
+  
+  cam_spp <-  unique(cam_data$speciesScientificName)
+  IUCN_spp <- unique(unique(filter_TERR_mal$binomial[croped]))
+  
+  both_have <- cam_spp[cam_spp %in% IUCN_spp] 
+  cam_only <- cam_spp[!(cam_spp%in%both_have)] 
+  IUCN_only <- IUCN_spp[!(IUCN_spp %in% both_have)]
+  
+  # If no camera species is in IUCN, that means a wrong match
+  if(rlang::is_empty(both_have)){
+    both_have_df <- data.frame(speciesScientificName="Wrong_loca",type="NA", projectID=shap_one$projectID)
+    IUCN_only_df <- data.frame(speciesScientificName="Wrong_loca",type="NA", projectID=shap_one$projectID)
+    cam_only_df <- data.frame(speciesScientificName="Wrong_loca",type="NA", projectID=shap_one$projectID)
+    
+  # If All camera species is in IUCN, that means all in
+  } else if(rlang::is_empty(cam_only)){
+    
+    cam_only_df <- data.frame(speciesScientificName="All_in",type="NA", projectID=shap_one$projectID)
+    IUCN_only_df <- data.frame(speciesScientificName=IUCN_only,type="C", projectID=shap_one$projectID)
+    
+  # Normal 
+  } else{
+    cam_only_df <- data.frame(speciesScientificName=cam_only,type="A", projectID=shap_one$projectID)
+    both_have_df <- data.frame(speciesScientificName=both_have,type="B", projectID=shap_one$projectID)
+    IUCN_only_df <- data.frame(speciesScientificName=IUCN_only,type="C", projectID=shap_one$projectID)
+  }
+  
+  modelling_df <- rbind(modelling_df,cam_only_df,both_have_df,IUCN_only_df)
+}
+
+nrow(modelling_df)
+modelling_df[which(modelling_df$speciesScientificName == "All_in"),]
+modelling_df[which(modelling_df$speciesScientificName == "Wrong_loca"),]
+
+modelling_df <- modelling_df %>% dplyr::filter(speciesScientificName != "All_in" & speciesScientificName !="Wrong_loca")
+
+nrow(modelling_df)
+
+write.csv(modelling_df, "result/modeling_df_add_emml_etc.csv", row.names = F)
+
+
+
+##############
+# Do not run #
+##############
+
+
+#####################
+# TEAM project only #
+#####################
 TEAM_shap <- shap[grep("TEAMS", shap$projectID),]
 TEAM <- spp_df_all[grep("TEAMS", spp_df_all$deploymentID),]
 
+i=1
 modelling_df <- data.frame()
 
 for (i in 1:length(TEAM_projectID)){
@@ -167,7 +261,9 @@ nrow(modelling_df)
 modelling_df <- modelling_df %>% dplyr::filter(speciesScientificName != "All_in")
 nrow(modelling_df)
 
-write.csv(modelling_df, "result/modeling_df.csv", row.names = F)
 
+####
+
+write.csv(modelling_df, "result/modeling_df.csv", row.names = F)
 
 

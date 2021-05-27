@@ -1,5 +1,6 @@
 # All Data
 data/
+meta_database/
 
 # Mac file 
 .DS_Store

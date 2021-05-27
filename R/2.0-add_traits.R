@@ -2,7 +2,9 @@
 library(dplyr)
 
 # load df
-modelling_df <- read.csv("result/modeling_df.csv")
+# modelling_df <- read.csv("result/modeling_df.csv")
+modelling_df <- read.csv("result/modeling_df_add_emml_etc.csv")
+
 which(modelling_df$speciesScientificName == "All_in")
 # add species traits
 # Eltonian traits
@@ -133,7 +135,7 @@ head(names_2nd)
 # search for IUCN synonyms and see if it's in the trait database
 
 for (i in 1:nrow(names_2nd)) {
-  IUCN_result <- rredlist::rl_synonyms(name_3rd$Scientific[i],key="29c88e9e867726644b28997693189b9a9301b21e4bdf0280d51b3006bebc6642")
+  IUCN_result <- rredlist::rl_synonyms(names_2nd$Scientific[i],key="29c88e9e867726644b28997693189b9a9301b21e4bdf0280d51b3006bebc6642")
   IUCN_syn <-  IUCN_result$result$synonym[1]
   if(IUCN_result$count != 0){
     names_2nd$IUCN_syn[i] <- IUCN_syn
@@ -199,8 +201,8 @@ modelling_df_final <- rbind(remaining, missing_trait_filling)
 
 head(modelling_df_final)
 
-write.csv(modelling_df_final,"result/2.0-modelling_df_with_traits.csv",row.names = F)
-
+#write.csv(modelling_df_final,"result/2.0-modelling_df_with_traits.csv",row.names = F)
+write.csv(modelling_df_final,"result/2.0-modelling_df_with_traits_emml_etc_added.csv",row.names = F)
 
 
 

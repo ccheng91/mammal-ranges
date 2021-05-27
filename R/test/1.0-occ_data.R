@@ -5,7 +5,7 @@ library(lubridate)
 rm(list=ls(all=TRUE))
 
 ## make occurrence record data
-spp_path <- list.files("/Users/chencheng/Desktop/data/TEAMS/meta_database/Image/Image_filtered",
+spp_path <- list.files("meta_database/Image/Image_filtered",
                        ignore.case = TRUE, full.names=TRUE, recursive=TRUE)
 team_path <- spp_path[4:19]
 head(team_path)
@@ -13,11 +13,14 @@ head(team_path)
 # Note:
 # image:deploymentID = deployment:deploymentLocationID
 
-dep_team <- read.csv("/Users/chencheng/Desktop/data/TEAMS/meta_database/Deployment/Deployment_TEAMS.csv",
+dep_team <- read.csv("meta_database/Deployment/Deployment_TEAMS.csv",
                      stringsAsFactors = F, header = T)
-dep_3 <- dep_team %>% dplyr::select(deploymentID=deploymentLocationID,Latitude, Longitude) %>% unique()
 
-spp_df <- data.frame()
+str(dep_team)
+
+dep_3 <- dep_team %>% dplyr::select(projectID=projectID, deploymentID=deploymentLocationID,Latitude, Longitude) %>% unique()
+
+spp_df <- data.frame()      
 
 for(i in 1:length(team_path)){
   image_temp <- read.csv(team_path[i])
@@ -35,15 +38,19 @@ gc <- read.csv(spp_path[1])
 ITBD <- read.csv(spp_path[2])
 SRGT <- read.csv(spp_path[3])
 
-dep_pro1 <- read.csv("/Users/chencheng/Desktop/data/TEAMS/meta_database/Deployment/Deployment_GC.csv")
-dep_pro2 <- read.csv("/Users/chencheng/Desktop/data/TEAMS/meta_database/Deployment/Deployment_ITBD.csv")
-dep_pro3 <- read.csv("/Users/chencheng/Desktop/data/TEAMS/meta_database/Deployment/Deployment_SRGT.csv")
+dep_pro1 <- read.csv("meta_database/Deployment/Deployment_GC.csv")
+dep_pro2 <- read.csv("meta_database/Deployment/Deployment_ITBD.csv")
+dep_pro3 <- read.csv("meta_database/Deployment/Deployment_SRGT.csv")
+
+str(dep_pro1)
+str(dep_pro2)
+str(dep_pro3)
 
 dep_others <- rbind(dep_pro1,dep_pro2)
 
-dep_others <- dep_others %>% dplyr::select(deploymentID=deploymentLocationID, Latitude, Longitude) %>% unique()
+dep_others <- dep_others %>% dplyr::select(projectID,deploymentID=deploymentLocationID, Latitude, Longitude) %>% unique()
 
-dep_pro_srgt <- dep_pro3 %>% dplyr::select(deploymentID=deploymentID, Latitude, Longitude) %>% unique()
+dep_pro_srgt <- dep_pro3 %>% dplyr::select(projectID,deploymentID=deploymentID, Latitude, Longitude) %>% unique()
 
 dep_others <- rbind(dep_others,dep_pro_srgt)
   
@@ -58,12 +65,14 @@ for(i in 1:3){
   spp_df2 <- rbind(spp_df2,new)
 }
 
+str(spp_df2)
+table(spp_df2$projectID)
 
 # Emammal 
 
 emmal_path <- spp_path[20:21]
 
-dep_path_emammal_US <- list.files("/Users/chencheng/Desktop/data/TEAMS/meta_database/Emml_redownload_NOV2019/all_deployment", 
+dep_path_emammal_US <- list.files("meta_database/Emml_redownload_NOV2019/all_deployment", 
                               pattern = "\\.(csv)$", ignore.case = TRUE,full.names=TRUE, recursive=TRUE)
 
 listdeply_emammal_us <- list()
@@ -82,7 +91,6 @@ head(emml_US)
 
 ##
 
-  emml_US <- read.csv(spp_path[21],stringsAsFactors = F, header = T)
   image_temp <- emml_US %>% dplyr::select(deploymentID,imageSequenceBeginTime,speciesScientificName) %>% 
     mutate(date=as.Date((imageSequenceBeginTime))) %>% mutate(year=year(date)) %>% 
     dplyr::select(deploymentID,speciesScientificName,year) %>% unique()
@@ -92,13 +100,15 @@ head(emml_US)
   
 head(deply_emammal_us)
   
-site_info_emml <- read.csv("/Users/chencheng/Desktop/data/TEAMS/meta_database/Emml_redownload_NOV2019/project_info_US_redownloaded_NOV2019.csv", stringsAsFactors = F)
+site_info_emml <- read.csv("meta_database/Emml_redownload_NOV2019/project_info_US_redownloaded_NOV2019.csv", 
+                  stringsAsFactors = F,fileEncoding="UTF-8-BOM")
   
-correct_BE_time <- deply_emammal_us %>% dplyr::select(projectID= project_id, deployment_id,actual_date_out,retrieval_date,project_name,
+correct_BE_time <- deply_emammal_us %>% dplyr::select(projectID=project_id, deployment_id,actual_date_out,retrieval_date,project_name,
                                                  sub_project_name,camera_failure_details,quiet_period_setting,actual_lat, actual_long)
   
   head(site_info_emml)
   head(correct_BE_time)
+  names(site_info_emml)
   
 ### add the abbr to deplyment ID
   for (i in 1:nrow(correct_BE_time)) {
@@ -128,11 +138,15 @@ deply_emammal_us <- correct_BE_time %>% dplyr::select(deploymentID=deployment_id
 
  spp_df3 <- data.frame()
  spp_df3 <- rbind(spp_df3,new)
-  
+ spp_df3 <- spp_df3 %>% mutate(projectID=stringr::str_extract(deploymentID, "[^_]*_[^_]*")) %>% 
+                       dplyr::select(deploymentID,speciesScientificName,year,projectID, Latitude,Longitude)
+str(spp_df2)
+str(spp_df3)
+
 ### Emammal other #####
  emml_other_temp <- read.csv(spp_path[20],stringsAsFactors = F, header = T)
  
- dep_emml <- read.csv("/Users/chencheng/Desktop/data/TEAMS/meta_database/Deployment/Deployment_EMML.csv", 
+ dep_emml <- read.csv("meta_database/Deployment/Deployment_EMML.csv", 
                     stringsAsFactors = F, header = T)
   head(emml_other_temp)
   head(dep_emml)
@@ -143,17 +157,22 @@ deply_emammal_us <- correct_BE_time %>% dplyr::select(deploymentID=deployment_id
    mutate(date=as.Date((imageSequenceBeginTime))) %>% mutate(year=year(date)) %>% 
    dplyr::select(deploymentID,speciesScientificName,year) %>% unique()
 
-  spp_df4 <- left_join(image_temp ,dep_emml_other, by="deploymentID") %>% unique()
+  spp_df4 <- left_join(image_temp ,dep_emml_other, by="deploymentID") %>% unique() %>% 
+    mutate(projectID=stringr::str_extract(deploymentID, "[^_]*_[^_]*")) %>% 
+    dplyr::select(deploymentID,speciesScientificName,year,projectID, Latitude,Longitude)
+ 
+   str(spp_df4)
+  table(spp_df4$projectID)
   
 ## add XSBN data
 
-XSBN <- read.csv("/Users/chencheng/Desktop/data/TEAMS/data/cameratrap/xsbn.csv", stringsAsFactors = F, header = T)
-XSBN_effort <- read.csv("/Users/chencheng/Desktop/data/TEAMS/data/XSBN_efforts.csv", stringsAsFactors = F, header = T)
+XSBN <- read.csv("data/cameratrap/xsbn.csv",fileEncoding="UTF-8-BOM")
+XSBN_effort <- read.csv("data/cameratrap/XSBN_efforts.csv",fileEncoding="UTF-8-BOM")
   
 head(XSBN)  
 head(XSBN_effort)
 
-XSBN_dep <- XSBN_effort %>% dplyr::select(deploymentID=NO, Longitude=GPS_X, Latitude=GPS_Y)
+XSBN_dep <- XSBN_effort %>% dplyr::select(projectID=PA, deploymentID=NO, Longitude=GPS_X, Latitude=GPS_Y)
 
 XSBN_image <- XSBN %>% dplyr::select(deploymentID=camera, dateTimeCaptured=datetime,speciesScientificName=scientfic_name) %>% 
   mutate(date=as.Date((dateTimeCaptured))) %>% mutate(year=year(date)) %>% 
@@ -172,61 +191,6 @@ head(spp_df5)
 
 spp_df_all <- rbind(spp_df,spp_df2,spp_df3,spp_df4,spp_df5)
 
-write.csv(spp_df_all,"result/occ_dataframe.csv",row.names = F)
+write.csv(spp_df_all,"result/occ_dataframe_with_projectID.csv",row.names = F)
 
-# All species
-all_spp <- spp_df_all$speciesScientificName 
-all_spp <- unique(all_spp)
-
-### 
-
-cam_spp <- all_spp
-# check all spp names:
-
-need_check <- cam_spp
-need_check <- data.frame(spp_name=need_check,itis_name=9999 ,check=9999,stringsAsFactors = F)
-str(need_check)
-
-
-# change 
-a <- list()
-for(i in 1:length(all_spp)){ # check spp name in itis database 
-  ero <- try( a[[i]] <- checkSpeciesNames(all_spp[i], accepted = F,searchtype="scientific", ask=F), TRUE)
-  if(isTRUE(class(ero)=="try-error")) { # ignore the error and keep looping, return the original name if error 
-    a[[i]] <- all_spp[i]
-  } 
-}
-
-for (i in 1:length(a)) {
-  if(length(a[[i]]) != 1) {
-    need_check$itis_name[i] <- a[[i]]$scientificName
-    need_check$check[i] <- a[[i]]$taxonUsageRating
-  } else{
-    need_check$itis_name[i] <- a[[i]]
-    need_check$check[i] <- "not_found"
-  }
-}
-
-need_check
-
-vaild_itis_spp <- filter(need_check,check == "valid")
-head(vaild_itis_spp)
-
-write.csv(vaild_itis_spp,"result/vaild_itis_spp.csv",  row.names = F)
-
-##################
-###### gbif ######
-##################
-
-# fill in your gbif.org credentials 
-user <- "ccxianren" # your gbif.org username 
-pwd <- "ccxianrenc910613" # your gbif.org password
-email <- "chengchen0613@gmail.com" # your email 
-
-
-rgbif::occ_download
-
-##################
-###### gbif ######
-##################
 

@@ -1,42 +1,61 @@
 # Add covariates 2
 library(dplyr)
-df <-modelling_df_final
+#modelling_df <- read.csv("result/2.0-modelling_df_with_traits.csv")
+modelling_df <- read.csv("result/2.0-modelling_df_with_traits_emml_etc_added.csv")
 
-terr_mal_new
+modelling_df$speciesScientificName
 
-rredlist::rl_history(terr_mal_new$binomial[1],)
+# Add IUCN history 
+his <- rredlist::rl_history(modelling_df$speciesScientificName[1],key="29c88e9e867726644b28997693189b9a9301b21e4bdf0280d51b3006bebc6642")
 
-head(df)
+#
+spp <- unique(modelling_df$speciesScientificName)
 
-pre_df <- read.csv("data/df/5.0-dataframe_for_modelling_OCT2019.csv") %>% dplyr::select(projectID,elevation,Tree_mean,realm )
+iucn_his <- data.frame(name=as.character(),frq=as.numeric(),year=as.numeric())
 
-df <- df %>% left_join(pre_df,by="projectID" )
- 
-head(pre_df)
 
-omi <- df %>% filter(type == "A" | type == "B")
-
-com <- df %>% filter(type == "C" | type == "B")
+for(i in 1:length(spp)){
+  his <- rredlist::rl_history(spp[i],key="29c88e9e867726644b28997693189b9a9301b21e4bdf0280d51b3006bebc6642")
   
-table(df$realm)
+  if(rlang::is_empty(his$result)){
+    cc <- data.frame( name=spp[i],frq="NA_not_in_iucn",year="NA_not_in_iucn")
+  } else{
+    cc <- data.frame( name=spp[i],frq=nrow(his$result),year=his$result$year[1])
+  }
+  iucn_his <- rbind(iucn_his,cc)
+}
 
-omi$type[which(omi$type == "A")] <- 1
-com$type[which(com$type == "C")] <- 1
+iucn_his[-which(iucn_his$frq =="NA_not_in_iucn"),]
 
-omi$type[which(omi$type == "B")] <- 0
-com$type[which(com$type == "B")] <- 0
+write.csv(iucn_his, "result/2.0-the_IUCN_history.csv", row.names = F)
 
-omi$type <- as.numeric(omi$type)
-com$type <- as.numeric(com$type)
+names(iucn_his) <- c("speciesScientificName","IUCN_frq","IUCN_year")
+head(modelling_df)
+
+modelling_df <- left_join(modelling_df,iucn_his,by="speciesScientificName") 
+modelling_df <- modelling_df %>%  filter(IUCN_frq != "NA_not_in_iucn") 
+
+#  Camelus dromedarius - domestic removed
+#  Tamiops macclellandii small squirrel removed
 
 
-z <- glm(type ~ diet.breadth+ BodyMass.Value + realm,family=binomial(),data=omi)
+## Add site covs
+pre_df <- read.csv("data/df/Chen_etal_Dataframe_for_model_Final_ori-scale.csv") 
+sampling_eff <- read.csv("data/df/3.1-Totall_sampling_effort_JUL2020.csv") %>% dplyr::select(projectID, sampling_effort_t)
 
-summary(z)
 
+#dplyr::select(projectID,elevation,Tree_mean,realm )
 
-z1 <- glm(type ~ diet.breadth+ BodyMass.Value,family=binomial(),data=com)
+head(pre_df)
+pre_df <-pre_df %>% left_join(sampling_eff,by="projectID") %>% 
+  dplyr::select(projectID,realm, elevation,NPP,ave_temp,Tree_mean,sampling_effort_t) 
 
-summary(z1)
+df <- modelling_df  %>% left_join(pre_df,by="projectID" )
+
+df[which(df$ForStrat.Value == "M"),]
+df <- df[-which(df$ForStrat.Value == "M"),] # remove marine spp
+
+write.csv(df,"result/2.5-modelling_df_all_covs.csv",row.names = F)
+
 
 
