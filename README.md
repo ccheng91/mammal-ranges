@@ -19,7 +19,8 @@ camera only (coded as `1)`. IUCN only: Species detected by IUCN only
 
 We had 1954 matches in total.
 
-There were **760** Both, **89** Camera only, and **1105** IUCN only.
+There were **760** of Both, **89** of Camera only, and **1105** of IUCN
+only.
 
 We ran two separate binomial mixed-effect models to examine what factors
 are associated with errors of the IUCN range map. We Compared type A,

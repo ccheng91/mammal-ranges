@@ -89,7 +89,7 @@ We matched these two species lists, all species ( **`r length(unique(df$speciesS
 
 We had `r nrow(df)` matches in total.
 
-There were **`r length(which(df$type=="B"))`** Both, **`r length(which(df$type=="A"))`** Camera only, and **`r length(which(df$type=="C"))`** IUCN only.
+There were **`r length(which(df$type=="B"))`** of Both, **`r length(which(df$type=="A"))`** of Camera only, and **`r length(which(df$type=="C"))`** of IUCN only.
 
 We ran two separate binomial mixed-effect models to examine what factors are associated with errors of the IUCN range map. We Compared type A, type B matches to assess the potential with [omission error]{.ul} and type C and type B for [commission error]{.ul}.
 
