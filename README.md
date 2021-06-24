@@ -111,7 +111,7 @@ So **YES**.
 YES, in our study, multiple observations (same species different place)
 existed for most of species.
 
-### We can’t use disaggregated model because it’s pseudoreplication. We can’t species or site as fixed effects becasue we are no interested in effects of species or site pre se.
+### We can’t use disaggregated model because it’s pseudoreplication. We can’t use species or site as fixed effects becasue we are no interested in effects of species or site pre se.
 
 We can also look at this from the AIC perspective. We generated
 fixed-effects minimal base-line models and three base-line mixed-model
