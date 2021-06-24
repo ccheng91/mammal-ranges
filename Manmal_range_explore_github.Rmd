@@ -83,17 +83,17 @@ tab$total <- rowSums(tab)
 
 ### Modeling framework
 
-We can think of this as: we surveyed a **`r length(unique(df$projectID))`** sites by using camera traps and 'surveyed' it again by using IUCN range map. We now have two species list from the two method.
+We can think of this as: we surveyed **`r length(unique(df$projectID))`** sites by using camera traps and 'surveyed' it again by using IUCN range map. We now have two species list from the two method.
 
-We matched these two species lists, all species ( **`r length(unique(df$speciesScientificName))`** in total) can be assigned into three categories: Both: Species detected by both Camera + IUCN (coded as `0` in the model). Camera only: Species detected by camera only (coded as `1)`. IUCN only: Species detected by IUCN only (also coded as `1` in the model).
+We matched these two species lists, all species ( **`r length(unique(df$speciesScientificName))`** in total) can be assigned into three categories: Both: Species detected by both Camera and IUCN (coded as `0` in the model). Camera only: Species detected by camera only (coded as `1)`. IUCN only: Species detected by IUCN only (also coded as `1` in the model).
 
-We have `r nrow(df)` matches in total.
+We had `r nrow(df)` matches in total.
 
-There are **`r length(which(df$type=="B"))`** of Both, **`r length(which(df$type=="A"))`** Camera only, and **`r length(which(df$type=="C"))`** IUCN only.
+There were **`r length(which(df$type=="B"))`** Both, **`r length(which(df$type=="A"))`** Camera only, and **`r length(which(df$type=="C"))`** IUCN only.
 
 We ran two separate binomial mixed-effect models to examine what factors are associated with errors of the IUCN range map. We Compared type A, type B matches to assess the potential with [omission error]{.ul} and type C and type B for [commission error]{.ul}.
 
-The binomial mixed-effects model looks like this:
+The binomial mixed-effects models structed like this:
 
 ```{r eval=FALSE, include=FALSE}
 # for omission error
@@ -138,7 +138,7 @@ nrow(tab[which(tab$total  >= 2),])
 nrow(tab[which(tab$total  >= 3),])
 ```
 
-Species have same species covariates of interest. If **`r nrow(tab[which(tab$total  >= 1),])`** species are sampled more than once. This can a potential pseudoreplication.
+One species have one set of species covariates of interest. If **`r nrow(tab[which(tab$total  >= 1),])`** species are sampled more than once. This can a potential pseudoreplication.
 
 We also followed this tutorial to think a bit more about the random effect (https://bookdown.org/steve_midway/DAR/random-effects.html#should-i-consider-random-effects).
 
@@ -159,6 +159,8 @@ So **YES**.
 4. Is there a lack of statistical independence due to multiple observations from the same level within a factor over space and/or time?
 
 YES, in our study, multiple observations (same species different place) existed for most of species.
+
+### We can't use disaggregated model because it's pseudoreplication. We can't species or site as fixed effects becasue we are no interested in effects of species or site pre se.
 
 We can also look at this from the AIC perspective. We generated fixed-effects minimal base-line models and three base-line mixed-model using the "glmer" function with random intercepts for species, projectID, and species + projectID. We can then check if including the random effect is permitted by comparing the AICs from the glm to AIC from the glmer model. If the AIC of the glmer object is smaller than the AIC of the glm object, then this indicates that including random intercepts is justified.
 

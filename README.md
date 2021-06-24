@@ -7,26 +7,26 @@ Cheng
 
 ### Modeling framework
 
-We can think of this as: we surveyed a **55** sites by using camera
-traps and ‘surveyed’ it again by using IUCN range map. We now have two
-species list from the two method.
+We can think of this as: we surveyed **55** sites by using camera traps
+and ‘surveyed’ it again by using IUCN range map. We now have two species
+list from the two method.
 
 We matched these two species lists, all species ( **453** in total) can
 be assigned into three categories: Both: Species detected by both Camera
-+ IUCN (coded as `0` in the model). Camera only: Species detected by
+and IUCN (coded as `0` in the model). Camera only: Species detected by
 camera only (coded as `1)`. IUCN only: Species detected by IUCN only
 (also coded as `1` in the model).
 
-We have 1954 matches in total.
+We had 1954 matches in total.
 
-There are **760** of Both, **89** Camera only, and **1105** IUCN only.
+There were **760** Both, **89** Camera only, and **1105** IUCN only.
 
 We ran two separate binomial mixed-effect models to examine what factors
 are associated with errors of the IUCN range map. We Compared type A,
 type B matches to assess the potential with <u>omission error</u> and
 type C and type B for <u>commission error</u>.
 
-The binomial mixed-effects model looks like this:
+The binomial mixed-effects models structed like this:
 
 ### Candidate variables
 
@@ -73,8 +73,9 @@ nrow(tab[which(tab$total  >= 3),])
 
     ## [1] 221
 
-Species have same species covariates of interest. If **453** species are
-sampled more than once. This can a potential pseudoreplication.
+One species have one set of species covariates of interest. If **453**
+species are sampled more than once. This can a potential
+pseudoreplication.
 
 We also followed this tutorial to think a bit more about the random
 effect
@@ -108,6 +109,8 @@ So **YES**.
 
 YES, in our study, multiple observations (same species different place)
 existed for most of species.
+
+### We can’t use disaggregated model because it’s pseudoreplication. We can’t species or site as fixed effects becasue we are no interested in effects of species or site pre se.
 
 We can also look at this from the AIC perspective. We generated
 fixed-effects minimal base-line models and three base-line mixed-model
