@@ -1,10 +1,9 @@
 ---
-title: "Manmal range explore"
+title: "Mammal range"
 author: "Cheng"
-date: "5/26/2021"
+date: "6/23/2021"
 output: rmarkdown::github_document
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -14,7 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(dplyr)
 
-df <- read.csv("result/2.5-modelling_df_all_covs.csv")
+df <- read.csv("result/2.5-modelling_df_all_covs.csv") %>% unique() 
+
+df <- df[-which(df$BodyMass.Value <=500),]
 
 df$diet.breadth <- scale(df$diet.breadth)
 
@@ -67,13 +68,28 @@ com$type <- as.numeric(com$type)
 head(df)
 head(omi)
 library(lme4)
+
+length(which(df$type=="A"))
+length(which(df$type=="B"))
+length(which(df$type=="C"))
+
+# prepare the table
+tab <- as.data.frame.matrix(table(df$speciesScientificName , df$projectID))
+tab$total <- rowSums(tab)
+
 ```
 
 ## Preliminary Modeling
 
 ### Modeling framework
 
-We assigned all species that are detected at each site to three categories: Type B match: Species detected by both Camera + IUCN ( coded as `0` in the model). Type A match: Species detected by camera only (coded as `1)`. Type C match: Species detected by IUCN only (also coded as `1` in the model).
+We can think of this as: we surveyed a **`r length(unique(df$projectID))`** sites by using camera traps and 'surveyed' it again by using IUCN range map. We now have two species list from the two method.
+
+We matched these two species lists, all species ( **`r length(unique(df$speciesScientificName))`** in total) can be assigned into three categories: Both: Species detected by both Camera + IUCN (coded as `0` in the model). Camera only: Species detected by camera only (coded as `1)`. IUCN only: Species detected by IUCN only (also coded as `1` in the model).
+
+We have `r nrow(df)` matches in total.
+
+There are **`r length(which(df$type=="B"))`** of Both, **`r length(which(df$type=="A"))`** Camera only, and **`r length(which(df$type=="C"))`** IUCN only.
 
 We ran two separate binomial mixed-effect models to examine what factors are associated with errors of the IUCN range map. We Compared type A, type B matches to assess the potential with [omission error]{.ul} and type C and type B for [commission error]{.ul}.
 
@@ -88,43 +104,63 @@ z2 <- glmer(type ~ x1 + x2 + x3 + ... (1|x4), family = binomial, data=com)
 
 ```
 
-### Candidate variables 
+### Candidate variables
 
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | Variable                    | Description                                                                                 | Prediction                                                                                                                                      |
-+=============================+=============================================================================================+=================================================================================================================================================+
+|-----------------------------|---------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | [First tier variable]{.ul}  |                                                                                             |                                                                                                                                                 |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | Body mass                   | Previous study found that body mass is associated with two types of error of IUCN range map | Body mass will have negative effect on both Commission and Omission errors: large mammal's distribution data is more accurate. Hence more match |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | Realm                       | Previous studies show that well IUCN range map is more accurate in well studied region      | Some realm will have significantly better match. Realm inculdes Afrotropical, Indo-Malay, Nearctic, Neotropical                                 |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | IUCN_frq                    | Total IUCN assessment of a species                                                          | Negative effect on both errors. More assessment                                                                                                 |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | IUCN_year                   | Year of the latest IUCN assessment of a species                                             | Negative effect on both errors. Recent IUCN range map is more accurate                                                                          |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | Camera trap sampling effort | Camera trap days                                                                            | Negative effect. The more sampling efforts less                                                                                                 |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | [Second tier variable]{.ul} |                                                                                             |                                                                                                                                                 |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | ForStrat.Value              | Forgoing stratum. Forgoing strata G (ground), S (sub-canopy), Ar (Arboreal)                 | Arboreal species has more error                                                                                                                 |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | Activity Nocturnal          | Nocturnality: Nocturnal (1), other (0)                                                      | Positive effect                                                                                                                                 |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | diet.breadth                | Number of diet a species has, 1 - 6. large -\> generalists                                  | Negative effect                                                                                                                                 |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | Tree_mean                   | Three height: Index of habitat complexity. From 1.8 to 38.8 (m)                             | Positive effect                                                                                                                                 |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | [Random effect]{.ul}        |                                                                                             |                                                                                                                                                 |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | Species                     | Potential random effects                                                                    | Same species has same species covariates                                                                                                        |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 | ProjectID                   | Potential random effects 2                                                                  | Same sites has same site covariates                                                                                                             |
-+-----------------------------+---------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 
-### Do we need random effect?
+## Rationale for random effects
 
-We generated fixed-effects minimal base-line models and three base-line mixed-model using the "glmer" function with random intercepts for species, projectID, and species + projectID. We can then check if including the random effect is permitted by comparing the AICs from the glm to AIC from the glmer model. If the AIC of the glmer object is smaller than the AIC of the glm object, then this indicates that including random intercepts is justified.
+The first question is how many of the species are sampled in different sites (more than one time)? 
+
+```{r echo=TRUE}
+#Species sample more than once
+nrow(tab[which(tab$total  >= 1),])
+
+#Species sample more than 2 times
+nrow(tab[which(tab$total  >= 2),])
+
+#Species sample more than 3 times
+nrow(tab[which(tab$total  >= 3),])
+```
+
+Species have same species covariates of interest. If **`r nrow(tab[which(tab$total  >= 1),])`** species are sampled more than once. This can a potential pseudoreplication.
+
+We also followed this tutorial to think a bit more about the random effect (https://bookdown.org/steve_midway/DAR/random-effects.html#should-i-consider-random-effects).
+
+1. Can the factor(s) be viewed as a random sample from a probability distribution?
+
+Species can be viewed as a random sample of all species, site can be viewed as a random sample of sites. So **YES**.
+
+2. Does the intended scope of inference extend beyond the levels of a factor included in the current analysis to the entire population of a factor?
+
+We are interested in general relationship between species traits (i.e.bodymass) and the "match". Not just these 500 + species. So **YES**. 
+
+3. Are the coefficients of a given factor going to be modeled?
+
+If there is variation among species in probability of "matching". Then it is hypothesized that this might be due to species traits, we've added traits in our model. 
+
+So **YES**.
+
+4. Is there a lack of statistical independence due to multiple observations from the same level within a factor over space and/or time?
+
+YES, in our study, multiple observations (same species different place) existed for most of species.
+
+We can also look at this from the AIC perspective. We generated fixed-effects minimal base-line models and three base-line mixed-model using the "glmer" function with random intercepts for species, projectID, and species + projectID. We can then check if including the random effect is permitted by comparing the AICs from the glm to AIC from the glmer model. If the AIC of the glmer object is smaller than the AIC of the glm object, then this indicates that including random intercepts is justified.
 
 ```{r echo=TRUE}
 
@@ -140,8 +176,6 @@ m0.glmer2.omi<- glmer(type ~ (1|projectID) , data = omi, family = binomial, cont
 
 # base-line mixed-model 3
 m0.glmer3.omi<- glmer(type ~ (1|speciesScientificName) + (1|projectID) , data = omi, family = binomial, control=glmerControl(optimizer="bobyqa"))
-
-
 
 # baseline model glm commission error
 m0.glm.com <-  glm(type ~ 1, family = binomial, data = com) 
@@ -185,7 +219,8 @@ aic.glm;aic.glmer1;aic.glmer2;aic.glmer3
 
 ```
 
-##### The AIC of the glmer3 object is smallest shows that including the two random intercepts (species + project) is justified.
+
+### The AIC of the glmer3 object is smallest shows that including the two random intercepts (species + project) is justified.
 
 ## Model structure
 
@@ -226,7 +261,7 @@ The two index of IUCN assessment history are significant.
 
 The IUCN frequency has negative effect of `-0.20`. Make sense. The more assessment that IUCN conducted for a species the more it's range map will match camera trap result.
 
-BUt the IUCN year has positive effect of `0.33`. THis does not make sense, it means there are more mismatches in more recent IUCN assessment. I wonder if there is also a temporal mismatches. i.e. Camera survey was conducted in 2016, IUCN assessed in 2020. ([Need take a closer look]{.ul})
+But the IUCN year has positive effect of `0.33`. THis does not make sense, it means there are more mismatches in more recent IUCN assessment. I wonder if there is also a temporal mismatches. i.e. Camera survey was conducted in 2016, IUCN assessed in 2020. ([Need take a closer look]{.ul})
 
 ## Next, let's fit the full model
 
@@ -261,7 +296,7 @@ sjPlot::tab_model(z4)
 
 #### IUCN frequency remain significant, but not IUCN year.
 
-#### Forgoing stratum matters. 
+#### Forgoing stratum matters.
 
 The dummy level of the forgoing strata is ForStrat.Value [Arboreal] in our model. ForStrat.Value [Ground] and ForStrat.Value [Sub-canopy] have negative effects `-1.70` and `-2.78` compare to ForStrat.Value [Arboreal]. This means we are more likely to get a mismatch for arboreal species.
 

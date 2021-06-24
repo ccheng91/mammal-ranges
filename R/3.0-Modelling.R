@@ -59,6 +59,12 @@ omi <- omi %>% dplyr::select(type, speciesScientificName ,ForStrat.Value , Activ
 z <- glm(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value + realm + 
            Tree_mean + elevation + IUCN_frq + IUCN_year + sampling_effort_t,family=binomial(),data=omi)
 
+summary(z)
+
+simulationOutput1 <- DHARMa::simulateResiduals(fittedModel = z, plot = F)
+plot(simulationOutput1)
+
+
 names(omi)
 
 fm1 <- glmer(type ~  ForStrat.Value + Activity.Nocturnal , diet.breadth, BodyMass.Value, realm, 

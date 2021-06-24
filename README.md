@@ -1,17 +1,25 @@
-Manmal range explore
+Mammal range
 ================
 Cheng
-5/26/2021
+6/23/2021
 
 ## Preliminary Modeling
 
 ### Modeling framework
 
-We assigned all species that are detected at each site to three
-categories: Type B match: Species detected by both Camera + IUCN ( coded
-as `0` in the model). Type A match: Species detected by camera only
-(coded as `1)`. Type C match: Species detected by IUCN only (also coded
-as `1` in the model).
+We can think of this as: we surveyed a **55** sites by using camera
+traps and ‘surveyed’ it again by using IUCN range map. We now have two
+species list from the two method.
+
+We matched these two species lists, all species ( **453** in total) can
+be assigned into three categories: Both: Species detected by both Camera
++ IUCN (coded as `0` in the model). Camera only: Species detected by
+camera only (coded as `1)`. IUCN only: Species detected by IUCN only
+(also coded as `1` in the model).
+
+We have 1954 matches in total.
+
+There are **760** of Both, **89** Camera only, and **1105** IUCN only.
 
 We ran two separate binomial mixed-effect models to examine what factors
 are associated with errors of the IUCN range map. We Compared type A,
@@ -39,15 +47,76 @@ The binomial mixed-effects model looks like this:
 | Species                     | Potential random effects                                                                    | Same species has same species covariates                                                                                                        |
 | ProjectID                   | Potential random effects 2                                                                  | Same sites has same site covariates                                                                                                             |
 
-### Do we need random effect?
+## Rationale for random effects
 
-We generated fixed-effects minimal base-line models and three base-line
-mixed-model using the “glmer” function with random intercepts for
-species, projectID, and species + projectID. We can then check if
-including the random effect is permitted by comparing the AICs from the
-glm to AIC from the glmer model. If the AIC of the glmer object is
-smaller than the AIC of the glm object, then this indicates that
-including random intercepts is justified.
+The first question is how many of the species are sampled in different
+sites (more than one time)?
+
+``` r
+#Species sample more than once
+nrow(tab[which(tab$total  >= 1),])
+```
+
+    ## [1] 453
+
+``` r
+#Species sample more than 2 times
+nrow(tab[which(tab$total  >= 2),])
+```
+
+    ## [1] 301
+
+``` r
+#Species sample more than 3 times
+nrow(tab[which(tab$total  >= 3),])
+```
+
+    ## [1] 221
+
+Species have same species covariates of interest. If **453** species are
+sampled more than once. This can a potential pseudoreplication.
+
+We also followed this tutorial to think a bit more about the random
+effect
+(<https://bookdown.org/steve_midway/DAR/random-effects.html#should-i-consider-random-effects>).
+
+1.  Can the factor(s) be viewed as a random sample from a probability
+    distribution?
+
+Species can be viewed as a random sample of all species, site can be
+viewed as a random sample of sites. So **YES**.
+
+2.  Does the intended scope of inference extend beyond the levels of a
+    factor included in the current analysis to the entire population of
+    a factor?
+
+We are interested in general relationship between species traits
+(i.e.bodymass) and the “match”. Not just these 500 + species. So
+**YES**.
+
+3.  Are the coefficients of a given factor going to be modeled?
+
+If there is variation among species in probability of “matching”. Then
+it is hypothesized that this might be due to species traits, we’ve added
+traits in our model.
+
+So **YES**.
+
+4.  Is there a lack of statistical independence due to multiple
+    observations from the same level within a factor over space and/or
+    time?
+
+YES, in our study, multiple observations (same species different place)
+existed for most of species.
+
+We can also look at this from the AIC perspective. We generated
+fixed-effects minimal base-line models and three base-line mixed-model
+using the “glmer” function with random intercepts for species,
+projectID, and species + projectID. We can then check if including the
+random effect is permitted by comparing the AICs from the glm to AIC
+from the glmer model. If the AIC of the glmer object is smaller than the
+AIC of the glm object, then this indicates that including random
+intercepts is justified.
 
 ``` r
 # baseline model glm for omission error
@@ -62,8 +131,6 @@ m0.glmer2.omi<- glmer(type ~ (1|projectID) , data = omi, family = binomial, cont
 
 # base-line mixed-model 3
 m0.glmer3.omi<- glmer(type ~ (1|speciesScientificName) + (1|projectID) , data = omi, family = binomial, control=glmerControl(optimizer="bobyqa"))
-
-
 
 # baseline model glm commission error
 m0.glm.com <-  glm(type ~ 1, family = binomial, data = com) 
@@ -93,13 +160,13 @@ aic.glmer3 <- AIC(logLik(m0.glmer3.omi))
 aic.glm;aic.glmer1;aic.glmer2;aic.glmer3
 ```
 
-    ## [1] 943.08
+    ## [1] 571.7912
 
-    ## [1] 626.3468
+    ## [1] 470.1384
 
-    ## [1] 939.5412
+    ## [1] 564.526
 
-    ## [1] 599.0271
+    ## [1] 446.0467
 
 Same thing with the commission error.
 
@@ -113,15 +180,15 @@ aic.glmer3 <- AIC(logLik(m0.glmer3.com))
 aic.glm;aic.glmer1;aic.glmer2;aic.glmer3
 ```
 
-    ## [1] 2829.176
+    ## [1] 2523.25
 
-    ## [1] 2377.584
+    ## [1] 2169.423
 
-    ## [1] 2509.332
+    ## [1] 2318.229
 
-    ## [1] 2106.953
+    ## [1] 1971.706
 
-##### The AIC of the glmer3 object is smallest shows that including the two random intercepts (species + project) is justified.
+### The AIC of the glmer3 object is smallest shows that including the two random intercepts (species + project) is justified.
 
 ## Model structure
 
@@ -143,40 +210,40 @@ summary(z1)
     ## Control: glmerControl(optimizer = "bobyqa")
     ## 
     ##      AIC      BIC   logLik deviance df.resid 
-    ##    608.3    658.0   -294.1    588.3     1053 
+    ##    458.3    505.7   -219.1    438.3      839 
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -4.2677 -0.0121 -0.0066 -0.0021  4.3085 
+    ## -3.9814 -0.0178 -0.0080 -0.0047  4.4817 
     ## 
     ## Random effects:
     ##  Groups                Name        Variance Std.Dev.
-    ##  speciesScientificName (Intercept) 281.791  16.787  
-    ##  projectID             (Intercept)   3.432   1.852  
-    ## Number of obs: 1063, groups:  speciesScientificName, 319; projectID, 46
+    ##  speciesScientificName (Intercept) 134.271  11.588  
+    ##  projectID             (Intercept)   3.255   1.804  
+    ## Number of obs: 849, groups:  speciesScientificName, 274; projectID, 46
     ## 
     ## Fixed effects:
     ##                   Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)       -8.56988    1.48422  -5.774 7.74e-09 ***
-    ## BodyMass.Value     0.21030    0.74060   0.284    0.776    
-    ## realmIndo-Malay   -2.25812    1.99259  -1.133    0.257    
-    ## realmNearctic      0.46038    1.31946   0.349    0.727    
-    ## realmNeotropical  -0.69394    1.50594  -0.461    0.645    
-    ## IUCN_frq          -0.31663    0.29299  -1.081    0.280    
-    ## IUCN_year         -0.30838    0.53728  -0.574    0.566    
-    ## sampling_effort_t -0.04277    0.46271  -0.092    0.926    
+    ## (Intercept)        -8.6705     1.5129  -5.731 9.97e-09 ***
+    ## BodyMass.Value      0.3054     0.4841   0.631    0.528    
+    ## realmIndo-Malay    -1.3551     1.7613  -0.769    0.442    
+    ## realmNearctic      -0.1749     1.3992  -0.125    0.901    
+    ## realmNeotropical   -0.8031     1.5107  -0.532    0.595    
+    ## IUCN_frq           -0.1398     0.2564  -0.545    0.586    
+    ## IUCN_year          -0.1268     0.5038  -0.252    0.801    
+    ## sampling_effort_t   0.1851     0.4844   0.382    0.702    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Correlation of Fixed Effects:
     ##             (Intr) BdyM.V rlmI-M rlmNrc rlmNtr IUCN_f IUCN_y
-    ## BodyMass.Vl  0.013                                          
-    ## relmInd-Mly -0.143  0.033                                   
-    ## realmNerctc -0.362  0.088  0.350                            
-    ## realmNtrpcl -0.091  0.045  0.231  0.364                     
-    ## IUCN_frq    -0.712 -0.083  0.038  0.052 -0.105              
-    ## IUCN_year    0.044 -0.139  0.002 -0.023  0.091 -0.037       
-    ## smplng_ffr_  0.077 -0.002  0.095 -0.267 -0.092 -0.040 -0.010
+    ## BodyMass.Vl  0.048                                          
+    ## relmInd-Mly -0.163 -0.027                                   
+    ## realmNerctc -0.377  0.049  0.286                            
+    ## realmNtrpcl -0.060  0.032  0.248  0.344                     
+    ## IUCN_frq    -0.650 -0.198  0.055  0.096 -0.072              
+    ## IUCN_year    0.043 -0.191  0.027  0.020  0.128 -0.090       
+    ## smplng_ffr_  0.047  0.021  0.106 -0.331 -0.108 -0.054 -0.013
 
 In a better table:
 
@@ -227,13 +294,13 @@ p
 BodyMass.Value
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.23
+1.36
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.29 – 5.27
+0.53 – 3.51
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.776
+0.528
 </td>
 </tr>
 <tr>
@@ -241,13 +308,13 @@ BodyMass.Value
 realm \[Indo-Malay\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.10
+0.26
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.00 – 5.19
+0.01 – 8.14
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.257
+0.442
 </td>
 </tr>
 <tr>
@@ -255,13 +322,13 @@ realm \[Indo-Malay\]
 realm \[Nearctic\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.58
+0.84
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.12 – 21.04
+0.05 – 13.03
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.727
+0.901
 </td>
 </tr>
 <tr>
@@ -269,13 +336,13 @@ realm \[Nearctic\]
 realm \[Neotropical\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.50
+0.45
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.03 – 9.56
+0.02 – 8.65
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.645
+0.595
 </td>
 </tr>
 <tr>
@@ -283,13 +350,13 @@ realm \[Neotropical\]
 IUCN\_frq
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.73
+0.87
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.41 – 1.29
+0.53 – 1.44
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.280
+0.586
 </td>
 </tr>
 <tr>
@@ -297,13 +364,13 @@ IUCN\_frq
 IUCN\_year
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.73
+0.88
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.26 – 2.11
+0.33 – 2.36
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.566
+0.801
 </td>
 </tr>
 <tr>
@@ -311,13 +378,13 @@ IUCN\_year
 sampling\_effort\_t
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.96
+1.20
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.39 – 2.37
+0.47 – 3.11
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.926
+0.702
 </td>
 </tr>
 <tr>
@@ -337,28 +404,28 @@ Random Effects
 τ<sub>00</sub> <sub>speciesScientificName</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-281.79
+134.27
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 τ<sub>00</sub> <sub>projectID</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-3.43
+3.25
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 ICC
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-0.99
+0.98
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 N <sub>speciesScientificName</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-319
+274
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
@@ -372,7 +439,7 @@ N <sub>projectID</sub>
 Observations
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left; border-top:1px solid;" colspan="3">
-1063
+849
 </td>
 </tr>
 <tr>
@@ -380,7 +447,7 @@ Observations
 Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-0.006 / 0.989
+0.004 / 0.977
 </td>
 </tr>
 </table>
@@ -405,40 +472,40 @@ summary(z2)
     ## Control: glmerControl(optimizer = "bobyqa")
     ## 
     ##      AIC      BIC   logLik deviance df.resid 
-    ##   2096.0   2152.3  -1038.0   2076.0     2058 
+    ##   1965.7   2021.1   -972.9   1945.7     1855 
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -3.5530 -0.4583  0.1199  0.4005  5.0511 
+    ## -3.4358 -0.4778  0.1501  0.4273  3.4217 
     ## 
     ## Random effects:
     ##  Groups                Name        Variance Std.Dev.
-    ##  speciesScientificName (Intercept) 4.646    2.155   
-    ##  projectID             (Intercept) 3.077    1.754   
-    ## Number of obs: 2068, groups:  speciesScientificName, 485; projectID, 55
+    ##  speciesScientificName (Intercept) 4.148    2.037   
+    ##  projectID             (Intercept) 2.627    1.621   
+    ## Number of obs: 1865, groups:  speciesScientificName, 433; projectID, 55
     ## 
     ## Fixed effects:
-    ##                   Estimate Std. Error z value Pr(>|z|)   
-    ## (Intercept)        1.94870    0.63384   3.074  0.00211 **
-    ## BodyMass.Value    -0.22709    0.14428  -1.574  0.11550   
-    ## realmIndo-Malay    1.01193    0.83752   1.208  0.22695   
-    ## realmNearctic     -0.85257    0.74775  -1.140  0.25421   
-    ## realmNeotropical   0.55065    0.91522   0.602  0.54740   
-    ## IUCN_frq          -0.20772    0.06899  -3.011  0.00260 **
-    ## IUCN_year          0.33035    0.13351   2.474  0.01334 * 
-    ## sampling_effort_t -0.14456    0.25413  -0.569  0.56947   
+    ##                   Estimate Std. Error z value Pr(>|z|)  
+    ## (Intercept)        1.50492    0.59709   2.520   0.0117 *
+    ## BodyMass.Value    -0.19870    0.14550  -1.366   0.1721  
+    ## realmIndo-Malay    1.23501    0.78373   1.576   0.1151  
+    ## realmNearctic     -0.72266    0.70896  -1.019   0.3080  
+    ## realmNeotropical   0.54583    0.85699   0.637   0.5242  
+    ## IUCN_frq          -0.16391    0.06725  -2.437   0.0148 *
+    ## IUCN_year          0.28852    0.13400   2.153   0.0313 *
+    ## sampling_effort_t -0.07172    0.23721  -0.302   0.7624  
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Correlation of Fixed Effects:
     ##             (Intr) BdyM.V rlmI-M rlmNrc rlmNtr IUCN_f IUCN_y
-    ## BodyMass.Vl  0.040                                          
-    ## relmInd-Mly -0.585  0.004                                   
-    ## realmNerctc -0.681  0.036  0.517                            
-    ## realmNtrpcl -0.523  0.028  0.418  0.480                     
-    ## IUCN_frq    -0.456 -0.150 -0.022  0.035 -0.038              
-    ## IUCN_year   -0.010 -0.175  0.016  0.021  0.055 -0.031       
-    ## smplng_ffr_ -0.068  0.003  0.163  0.062 -0.009  0.008 -0.005
+    ## BodyMass.Vl  0.049                                          
+    ## relmInd-Mly -0.585  0.009                                   
+    ## realmNerctc -0.671  0.041  0.508                            
+    ## realmNtrpcl -0.520  0.033  0.418  0.475                     
+    ## IUCN_frq    -0.469 -0.161 -0.018  0.040 -0.037              
+    ## IUCN_year   -0.020 -0.183  0.013  0.009  0.051 -0.007       
+    ## smplng_ffr_ -0.079  0.002  0.161  0.058 -0.010  0.007 -0.003
 
 ``` r
 # summarize tabulated form 
@@ -473,13 +540,13 @@ p
 (Intercept)
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-7.02
+4.50
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-2.03 – 24.31
+1.40 – 14.52
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-<strong>0.002</strong>
+<strong>0.012</strong>
 </td>
 </tr>
 <tr>
@@ -487,13 +554,13 @@ p
 BodyMass.Value
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.80
+0.82
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.60 – 1.06
+0.62 – 1.09
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.116
+0.172
 </td>
 </tr>
 <tr>
@@ -501,13 +568,13 @@ BodyMass.Value
 realm \[Indo-Malay\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-2.75
+3.44
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.53 – 14.20
+0.74 – 15.98
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.227
+0.115
 </td>
 </tr>
 <tr>
@@ -515,13 +582,13 @@ realm \[Indo-Malay\]
 realm \[Nearctic\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.43
+0.49
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.10 – 1.85
+0.12 – 1.95
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.254
+0.308
 </td>
 </tr>
 <tr>
@@ -532,10 +599,10 @@ realm \[Neotropical\]
 1.73
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.29 – 10.43
+0.32 – 9.26
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.547
+0.524
 </td>
 </tr>
 <tr>
@@ -543,13 +610,13 @@ realm \[Neotropical\]
 IUCN\_frq
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.81
+0.85
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.71 – 0.93
+0.74 – 0.97
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-<strong>0.003</strong>
+<strong>0.015</strong>
 </td>
 </tr>
 <tr>
@@ -557,13 +624,13 @@ IUCN\_frq
 IUCN\_year
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.39
+1.33
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.07 – 1.81
+1.03 – 1.74
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-<strong>0.013</strong>
+<strong>0.031</strong>
 </td>
 </tr>
 <tr>
@@ -571,13 +638,13 @@ IUCN\_year
 sampling\_effort\_t
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.87
+0.93
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.53 – 1.42
+0.58 – 1.48
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.569
+0.762
 </td>
 </tr>
 <tr>
@@ -597,28 +664,28 @@ Random Effects
 τ<sub>00</sub> <sub>speciesScientificName</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-4.65
+4.15
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 τ<sub>00</sub> <sub>projectID</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-3.08
+2.63
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 ICC
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-0.70
+0.67
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 N <sub>speciesScientificName</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-485
+433
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
@@ -632,7 +699,7 @@ N <sub>projectID</sub>
 Observations
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left; border-top:1px solid;" colspan="3">
-2068
+1865
 </td>
 </tr>
 <tr>
@@ -640,7 +707,7 @@ Observations
 Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-0.066 / 0.721
+0.066 / 0.695
 </td>
 </tr>
 </table>
@@ -651,7 +718,7 @@ The IUCN frequency has negative effect of `-0.20`. Make sense. The more
 assessment that IUCN conducted for a species the more it’s range map
 will match camera trap result.
 
-BUt the IUCN year has positive effect of `0.33`. THis does not make
+But the IUCN year has positive effect of `0.33`. THis does not make
 sense, it means there are more mismatches in more recent IUCN
 assessment. I wonder if there is also a temporal mismatches. i.e. Camera
 survey was conducted in 2016, IUCN assessed in 2020. (<u>Need take a
@@ -678,33 +745,33 @@ summary(z3)
     ## Control: glmerControl(optimizer = "bobyqa")
     ## 
     ##      AIC      BIC   logLik deviance df.resid 
-    ##    614.7    689.2   -292.3    584.7     1048 
+    ##    466.9    538.1   -218.5    436.9      834 
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -4.3021 -0.0145 -0.0060 -0.0019  4.3041 
+    ## -3.9850 -0.0194 -0.0091 -0.0043  4.4996 
     ## 
     ## Random effects:
     ##  Groups                Name        Variance Std.Dev.
-    ##  speciesScientificName (Intercept) 254.878  15.965  
-    ##  projectID             (Intercept)   3.483   1.866  
-    ## Number of obs: 1063, groups:  speciesScientificName, 319; projectID, 46
+    ##  speciesScientificName (Intercept) 126.027  11.226  
+    ##  projectID             (Intercept)   3.234   1.798  
+    ## Number of obs: 849, groups:  speciesScientificName, 274; projectID, 46
     ## 
     ## Fixed effects:
-    ##                    Estimate Std. Error z value Pr(>|z|)   
-    ## (Intercept)        -6.27018    2.21307  -2.833  0.00461 **
-    ## BodyMass.Value      0.50049    0.67081   0.746  0.45561   
-    ## realmIndo-Malay    -2.21001    1.88677  -1.171  0.24147   
-    ## realmNearctic       0.78683    1.42068   0.554  0.57969   
-    ## realmNeotropical   -0.03781    1.60987  -0.023  0.98126   
-    ## IUCN_frq           -0.37141    0.32304  -1.150  0.25025   
-    ## IUCN_year          -0.68779    0.62741  -1.096  0.27298   
-    ## sampling_effort_t  -0.04349    0.46797  -0.093  0.92595   
-    ## ForStrat.ValueG    -1.83700    1.58263  -1.161  0.24575   
-    ## ForStrat.ValueS    -3.09474    2.33126  -1.327  0.18434   
-    ## Activity.Nocturnal -0.61524    1.30217  -0.472  0.63659   
-    ## diet.breadth        0.46138    0.53647   0.860  0.38978   
-    ## Tree_mean          -0.09176    0.45087  -0.204  0.83873   
+    ##                    Estimate Std. Error z value Pr(>|z|)    
+    ## (Intercept)        -7.99752    2.10625  -3.797 0.000146 ***
+    ## BodyMass.Value      0.36409    0.50066   0.727 0.467089    
+    ## realmIndo-Malay    -1.25698    1.72424  -0.729 0.465998    
+    ## realmNearctic      -0.09689    1.45318  -0.067 0.946839    
+    ## realmNeotropical   -0.39046    1.63580  -0.239 0.811341    
+    ## IUCN_frq           -0.12121    0.27440  -0.442 0.658684    
+    ## IUCN_year          -0.23835    0.57915  -0.412 0.680664    
+    ## sampling_effort_t   0.19551    0.48341   0.404 0.685886    
+    ## ForStrat.ValueG    -0.52128    1.57371  -0.331 0.740463    
+    ## ForStrat.ValueS    -2.27304    2.42117  -0.939 0.347822    
+    ## Activity.Nocturnal -0.15842    1.31427  -0.121 0.904056    
+    ## diet.breadth        0.25205    0.52724   0.478 0.632612    
+    ## Tree_mean          -0.08110    0.46377  -0.175 0.861185    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -749,10 +816,10 @@ p
 0.00
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.00 – 0.14
+0.00 – 0.02
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-<strong>0.005</strong>
+<strong>&lt;0.001</strong>
 </td>
 </tr>
 <tr>
@@ -760,13 +827,13 @@ p
 BodyMass.Value
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.65
+1.44
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.44 – 6.14
+0.54 – 3.84
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.456
+0.467
 </td>
 </tr>
 <tr>
@@ -774,13 +841,13 @@ BodyMass.Value
 realm \[Indo-Malay\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.11
+0.28
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.00 – 4.43
+0.01 – 8.35
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.241
+0.466
 </td>
 </tr>
 <tr>
@@ -788,13 +855,13 @@ realm \[Indo-Malay\]
 realm \[Nearctic\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-2.20
+0.91
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.14 – 35.56
+0.05 – 15.66
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.580
+0.947
 </td>
 </tr>
 <tr>
@@ -802,13 +869,13 @@ realm \[Nearctic\]
 realm \[Neotropical\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.96
+0.68
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.04 – 22.59
+0.03 – 16.70
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.981
+0.811
 </td>
 </tr>
 <tr>
@@ -816,13 +883,13 @@ realm \[Neotropical\]
 IUCN\_frq
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.69
+0.89
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.37 – 1.30
+0.52 – 1.52
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.250
+0.659
 </td>
 </tr>
 <tr>
@@ -830,13 +897,13 @@ IUCN\_frq
 IUCN\_year
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.50
+0.79
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.15 – 1.72
+0.25 – 2.45
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.273
+0.681
 </td>
 </tr>
 <tr>
@@ -844,13 +911,13 @@ IUCN\_year
 sampling\_effort\_t
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.96
+1.22
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.38 – 2.40
+0.47 – 3.14
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.926
+0.686
 </td>
 </tr>
 <tr>
@@ -858,13 +925,13 @@ sampling\_effort\_t
 ForStrat.Value \[G\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.16
+0.59
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.01 – 3.54
+0.03 – 12.98
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.246
+0.740
 </td>
 </tr>
 <tr>
@@ -872,13 +939,13 @@ ForStrat.Value \[G\]
 ForStrat.Value \[S\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.05
+0.10
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.00 – 4.37
+0.00 – 11.85
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.184
+0.348
 </td>
 </tr>
 <tr>
@@ -886,13 +953,13 @@ ForStrat.Value \[S\]
 Activity.Nocturnal
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.54
+0.85
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.04 – 6.94
+0.06 – 11.22
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.637
+0.904
 </td>
 </tr>
 <tr>
@@ -900,13 +967,13 @@ Activity.Nocturnal
 diet.breadth
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.59
+1.29
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.55 – 4.54
+0.46 – 3.62
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.390
+0.633
 </td>
 </tr>
 <tr>
@@ -914,13 +981,13 @@ diet.breadth
 Tree\_mean
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.91
+0.92
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.38 – 2.21
+0.37 – 2.29
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.839
+0.861
 </td>
 </tr>
 <tr>
@@ -940,28 +1007,28 @@ Random Effects
 τ<sub>00</sub> <sub>speciesScientificName</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-254.88
+126.03
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 τ<sub>00</sub> <sub>projectID</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-3.48
+3.23
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 ICC
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-0.99
+0.98
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 N <sub>speciesScientificName</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-319
+274
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
@@ -975,7 +1042,7 @@ N <sub>projectID</sub>
 Observations
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left; border-top:1px solid;" colspan="3">
-1063
+849
 </td>
 </tr>
 <tr>
@@ -983,7 +1050,7 @@ Observations
 Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-0.013 / 0.988
+0.009 / 0.975
 </td>
 </tr>
 </table>
@@ -1007,33 +1074,33 @@ summary(z4)
     ## Control: glmerControl(optimizer = "bobyqa")
     ## 
     ##      AIC      BIC   logLik deviance df.resid 
-    ##   2067.6   2152.2  -1018.8   2037.6     2053 
+    ##   1937.0   2020.0   -953.5   1907.0     1850 
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -3.6215 -0.4408  0.1100  0.3846  5.1149 
+    ## -3.5254 -0.4670  0.1430  0.4186  3.4577 
     ## 
     ## Random effects:
     ##  Groups                Name        Variance Std.Dev.
-    ##  speciesScientificName (Intercept) 4.416    2.101   
-    ##  projectID             (Intercept) 3.055    1.748   
-    ## Number of obs: 2068, groups:  speciesScientificName, 485; projectID, 55
+    ##  speciesScientificName (Intercept) 3.886    1.971   
+    ##  projectID             (Intercept) 2.619    1.618   
+    ## Number of obs: 1865, groups:  speciesScientificName, 433; projectID, 55
     ## 
     ## Fixed effects:
     ##                    Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)         3.15026    0.74465   4.231 2.33e-05 ***
-    ## BodyMass.Value     -0.18441    0.14685  -1.256  0.20919    
-    ## realmIndo-Malay     1.23605    0.83813   1.475  0.14027    
-    ## realmNearctic      -0.68516    0.74743  -0.917  0.35931    
-    ## realmNeotropical    1.05002    0.97892   1.073  0.28344    
-    ## IUCN_frq           -0.21533    0.06957  -3.095  0.00197 ** 
-    ## IUCN_year           0.12543    0.14929   0.840  0.40082    
-    ## sampling_effort_t  -0.19314    0.25692  -0.752  0.45219    
-    ## ForStrat.ValueG    -1.70511    0.38880  -4.386 1.16e-05 ***
-    ## ForStrat.ValueS    -2.78666    0.52358  -5.322 1.02e-07 ***
-    ## Activity.Nocturnal  0.11223    0.32863   0.342  0.73272    
-    ## diet.breadth       -0.26275    0.14510  -1.811  0.07017 .  
-    ## Tree_mean          -0.44031    0.30208  -1.458  0.14495    
+    ## (Intercept)         2.77097    0.70663   3.921 8.80e-05 ***
+    ## BodyMass.Value     -0.16568    0.14757  -1.123   0.2616    
+    ## realmIndo-Malay     1.42681    0.78507   1.817   0.0692 .  
+    ## realmNearctic      -0.58816    0.70829  -0.830   0.4063    
+    ## realmNeotropical    0.98010    0.91772   1.068   0.2855    
+    ## IUCN_frq           -0.16991    0.06761  -2.513   0.0120 *  
+    ## IUCN_year           0.10412    0.14966   0.696   0.4866    
+    ## sampling_effort_t  -0.12192    0.24025  -0.507   0.6118    
+    ## ForStrat.ValueG    -1.67731    0.38481  -4.359 1.31e-05 ***
+    ## ForStrat.ValueS    -2.73095    0.51849  -5.267 1.39e-07 ***
+    ## Activity.Nocturnal  0.03603    0.33328   0.108   0.9139    
+    ## diet.breadth       -0.28391    0.14277  -1.989   0.0467 *  
+    ## Tree_mean          -0.45779    0.28173  -1.625   0.1042    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -1075,10 +1142,10 @@ p
 (Intercept)
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-23.34
+15.97
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-5.42 – 100.46
+4.00 – 63.81
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>&lt;0.001</strong>
@@ -1089,13 +1156,13 @@ p
 BodyMass.Value
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.83
+0.85
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.62 – 1.11
+0.63 – 1.13
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.209
+0.262
 </td>
 </tr>
 <tr>
@@ -1103,13 +1170,13 @@ BodyMass.Value
 realm \[Indo-Malay\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-3.44
+4.17
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.67 – 17.79
+0.89 – 19.40
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.140
+0.069
 </td>
 </tr>
 <tr>
@@ -1117,13 +1184,13 @@ realm \[Indo-Malay\]
 realm \[Nearctic\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.50
+0.56
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.12 – 2.18
+0.14 – 2.23
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.359
+0.406
 </td>
 </tr>
 <tr>
@@ -1131,13 +1198,13 @@ realm \[Nearctic\]
 realm \[Neotropical\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-2.86
+2.66
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.42 – 19.47
+0.44 – 16.10
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.283
+0.286
 </td>
 </tr>
 <tr>
@@ -1145,13 +1212,13 @@ realm \[Neotropical\]
 IUCN\_frq
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.81
+0.84
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.70 – 0.92
+0.74 – 0.96
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-<strong>0.002</strong>
+<strong>0.012</strong>
 </td>
 </tr>
 <tr>
@@ -1159,13 +1226,13 @@ IUCN\_frq
 IUCN\_year
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.13
+1.11
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.85 – 1.52
+0.83 – 1.49
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.401
+0.487
 </td>
 </tr>
 <tr>
@@ -1173,13 +1240,13 @@ IUCN\_year
 sampling\_effort\_t
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.82
+0.89
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.50 – 1.36
+0.55 – 1.42
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.452
+0.612
 </td>
 </tr>
 <tr>
@@ -1187,10 +1254,10 @@ sampling\_effort\_t
 ForStrat.Value \[G\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.18
+0.19
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.08 – 0.39
+0.09 – 0.40
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>&lt;0.001</strong>
@@ -1201,10 +1268,10 @@ ForStrat.Value \[G\]
 ForStrat.Value \[S\]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.06
+0.07
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.02 – 0.17
+0.02 – 0.18
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>&lt;0.001</strong>
@@ -1215,13 +1282,13 @@ ForStrat.Value \[S\]
 Activity.Nocturnal
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.12
+1.04
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.59 – 2.13
+0.54 – 1.99
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.733
+0.914
 </td>
 </tr>
 <tr>
@@ -1229,13 +1296,13 @@ Activity.Nocturnal
 diet.breadth
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.77
+0.75
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.58 – 1.02
+0.57 – 1.00
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.070
+<strong>0.047</strong>
 </td>
 </tr>
 <tr>
@@ -1243,13 +1310,13 @@ diet.breadth
 Tree\_mean
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.64
+0.63
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.36 – 1.16
+0.36 – 1.10
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.145
+0.104
 </td>
 </tr>
 <tr>
@@ -1269,28 +1336,28 @@ Random Effects
 τ<sub>00</sub> <sub>speciesScientificName</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-4.42
+3.89
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 τ<sub>00</sub> <sub>projectID</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-3.05
+2.62
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 ICC
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-0.69
+0.66
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
 N <sub>speciesScientificName</sub>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-485
+433
 </td>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
@@ -1304,7 +1371,7 @@ N <sub>projectID</sub>
 Observations
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left; border-top:1px solid;" colspan="3">
-2068
+1865
 </td>
 </tr>
 <tr>
@@ -1312,7 +1379,7 @@ Observations
 Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
-0.123 / 0.732
+0.131 / 0.708
 </td>
 </tr>
 </table>
