@@ -4,6 +4,7 @@ author: "Cheng"
 date: "6/23/2021"
 output: rmarkdown::github_document
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -125,7 +126,7 @@ z2 <- glmer(type ~ x1 + x2 + x3 + ... (1|x4), family = binomial, data=com)
 
 ## Rationale for random effects
 
-The first question is how many of the species are sampled in different sites (more than one time)? 
+The first question is how many of the species are sampled in different sites (more than one time)?
 
 ```{r echo=TRUE}
 #Species sample more than once
@@ -140,23 +141,23 @@ nrow(tab[which(tab$total  >= 3),])
 
 One species have one set of species covariates of interest. If **`r nrow(tab[which(tab$total  >= 1),])`** species are sampled more than once. This can a potential pseudoreplication.
 
-We also followed this tutorial to think a bit more about the random effect (https://bookdown.org/steve_midway/DAR/random-effects.html#should-i-consider-random-effects).
+We also followed this tutorial to think a bit more about the random effect (<https://bookdown.org/steve_midway/DAR/random-effects.html#should-i-consider-random-effects>).
 
-1. Can the factor(s) be viewed as a random sample from a probability distribution?
+1.  Can the factor(s) be viewed as a random sample from a probability distribution?
 
 Species can be viewed as a random sample of all species, site can be viewed as a random sample of sites. So **YES**.
 
-2. Does the intended scope of inference extend beyond the levels of a factor included in the current analysis to the entire population of a factor?
+2.  Does the intended scope of inference extend beyond the levels of a factor included in the current analysis to the entire population of a factor?
 
-We are interested in general relationship between species traits (i.e.bodymass) and the "match". Not just these 500 + species. So **YES**. 
+We are interested in general relationship between species traits (i.e.bodymass) and the "match". Not just these 500 + species. So **YES**.
 
-3. Are the coefficients of a given factor going to be modeled?
+3.  Are the coefficients of a given factor going to be modeled?
 
-If there is variation among species in probability of "matching". Then it is hypothesized that this might be due to species traits, we've added traits in our model. 
+If there is variation among species in probability of "matching". Then it is hypothesized that this might be due to species traits, we've added traits in our model.
 
 So **YES**.
 
-4. Is there a lack of statistical independence due to multiple observations from the same level within a factor over space and/or time?
+4.  Is there a lack of statistical independence due to multiple observations from the same level within a factor over space and/or time?
 
 YES, in our study, multiple observations (same species different place) existed for most of species.
 
@@ -220,7 +221,6 @@ aic.glmer3 <- AIC(logLik(m0.glmer3.com))
 aic.glm;aic.glmer1;aic.glmer2;aic.glmer3
 
 ```
-
 
 ### The AIC of the glmer3 object is smallest shows that including the two random intercepts (species + project) is justified.
 

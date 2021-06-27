@@ -212,6 +212,11 @@ modelling_df[which(modelling_df$speciesScientificName == "Muntiacus vaginalis"),
 write.csv(modelling_df, "result/modeling_df_add_emml_etc.csv", row.names = F)
 
 
+
+
+
+
+
 cam_data <- non_round_cam[which(non_round_cam$projectID ==  "XSBN_BL"),]
 shap_one <- shap[which(shap$projectID ==  "XSBN_BL"),]
 
@@ -228,9 +233,9 @@ muntjac <- filter_TERR_mal[which(filter_TERR_mal$binomial=="Muntiacus vaginalis"
 plot(muntjac[1])
 plot(st_geometry(shap_one[1], col = 'red', add = TRUE))
 
-st_intersects(muntjac,shap_one, sparse = FALSE)
+croped <- st_intersects(muntjac,shap_one, sparse = FALSE)
 
-
+IUCN_spp_try <- unique(unique(muntjac$binomial[croped]))
 
 
 st_crs(muntjac)
@@ -239,6 +244,11 @@ st_crs(shap_one)
 plot(st_geometry(nc)[1], col = 'red', add = TRUE)
 
 plot(muntjac[1], shap_one)
+
+
+
+
+
 
 ###################################################################################################################################
 # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run #

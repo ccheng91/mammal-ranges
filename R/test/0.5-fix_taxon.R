@@ -138,7 +138,7 @@ spp_df_all <- spp_df_all %>%
 
 
 
-# write.csv(spp_df_all,"result/occ_dataframe_taxon_fixed.csv",row.names = F)
+write.csv(spp_df_all,"result/occ_dataframe_taxon_fixed.csv",row.names = F)
 
 
 ## Everything name should sync with IUCN name Including Elton & PanTHERIA name 

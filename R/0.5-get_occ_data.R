@@ -175,11 +175,12 @@ head(XSBN_effort)
 XSBN_dep <- XSBN_effort %>% dplyr::select(projectID=PA, deploymentID=NO, Longitude=GPS_X, Latitude=GPS_Y)
 
 XSBN_image <- XSBN %>% dplyr::select(deploymentID=camera, dateTimeCaptured=datetime,speciesScientificName=scientfic_name) %>% 
-  mutate(date=as.Date((dateTimeCaptured))) %>% mutate(year=year(date)) %>% 
+  mutate(date=mdy(dateTimeCaptured)) %>% mutate(year=year(date)) %>% 
   dplyr::select(deploymentID,speciesScientificName,year) %>% unique()                     
 XSBN_image$deploymentID <- toupper(XSBN_image$deploymentID)
 
 spp_df5 <- left_join(XSBN_image ,XSBN_dep, by="deploymentID") %>% unique()
+
 
 head(spp_df)
 head(spp_df2)
@@ -191,17 +192,17 @@ head(spp_df5)
 
 spp_df_all <- rbind(spp_df,spp_df2,spp_df3,spp_df4,spp_df5)
 
-write.csv(spp_df_all,"result/0.5-occ_dataframe_with_projectID_26June21.csv",row.names = F)
+write.csv(spp_df_all,"result/June2021/0.5-occ_dataframe_with_projectID_26June21.csv",row.names = F)
 
 #Identify species that's not matched in IUCN range map
 
+
+
+################
+## fix taxon ###
+################
+
 # load data
-
-
-# Camera trap species 
-spp_df_all <- read.csv("result/occ_dataframe_taxon_fixed.csv") 
-spp_df_all_projID <- read.csv("result/occ_dataframe_with_projectID.csv")
-
 
 # Range of all Terrestrial mammal downloaded in 2017
 #TERR_mal <- st_read("data/TERRESTRIAL_MAMMALS/TERRESTRIAL_MAMMALS.shp")
@@ -213,10 +214,9 @@ terr_mal_new <- st_read("data/MAMMALS_TERRESTRIAL_ONLY/MAMMALS_TERRESTRIAL_ONLY.
 # This can be download at (https://www.iucnredlist.org/resources/spatial-data-download)
 terr_mal_water <- st_read("data/MAMMALS_FRESHWATER/MAMMALS_FRESHWATER.shp")
 
+# match names Which isn't in IUCN 
 
-###### test
-
-all_speices <- unique(spp_df_all_projID$speciesScientificName) # Camera detected species
+all_speices <- unique(spp_df_all$speciesScientificName) # Camera detected species
 
 all_mammal_New <- unique(terr_mal_new$binomial) #2020
 all_mammal_water <- unique(terr_mal_water$binomial) # water
@@ -230,34 +230,6 @@ not_2020 <- all_speices[all_speices %in% all_mammal == F]
 not_2020
 length(not_2020)
 
-not_2020
-
-
-####### test
-
-
-# Step 1. - match names
-
-all_speices <- unique(spp_df_all$speciesScientificName) # Camera detected species
-
-all_mammal_New <- unique(terr_mal_new$binomial) #2020
-all_mammal_water <- unique(terr_mal_water$binomial) # water
-
-#
-not_2020 <- all_speices[all_speices %in% all_mammal_New == F]
-not_2020_2 <- not_2020[not_2020 %in% all_mammal_water == F]
-
-not_2020_2
-length(not_2020_2)
-# Which isn't in IUCN 
-
-not_match_spp <- all_speices[all_speices %in% all_mammal == F]
-
-not_match_spp_2 <- not_match_spp[not_match_spp %in% all_mammal_New == F]
-
-not_match_spp_2
-length(not_match_spp_2)
-#### Do not run ##########
 #### Name to be fixed ####
 
 spp_df_all$speciesScientificName[which(spp_df_all$speciesScientificName == "Cercopithecus lhoesti" )]<- "Allochrocebus lhoesti"
@@ -303,55 +275,17 @@ spp_df_all <- spp_df_all %>%
   filter( speciesScientificName !=  "Sagittarius serpentarius")%>%
   filter( speciesScientificName !=  "Camelus dromedarius")
 
-##
+## Save the data frame
 
-write.csv(spp_df_all,"result/0.5-occ_dataframe_taxon_fixed_26June21.csv",row.names = F)
+write.csv(spp_df_all,"result/June2021/0.5-occ_dataframe_taxon_fixed_26June21.csv",row.names = F)
 
+## check if more un-match?
+all_speices <- unique(spp_df_all$speciesScientificName)
 
-## Everything name should sync with IUCN name Including Elton & PanTHERIA name 
+not_2020 <- all_speices[all_speices %in% all_mammal == F]
 
-# need a function that everytime that there's a no match 
-
-# Make a taxa link table
-
-All_IUCN_names <-  data.frame(Scientific=unique(c(terr_mal_new$binomial, terr_mal_water$binomial)))
-
-All_IUCN_names <- All_IUCN_names %>% mutate(id = get_ids(Scientific, "itis")) %>% 
-  mutate(accepted_name = get_names(id, "itis"))
-
-All_IUCN_names <- All_IUCN_names %>% mutate(id_wd = get_ids(Scientific, "wd", version=2019)) %>%
-  mutate(accepted_name_wd = get_names(id_wd, "wd", version=2019))
-
-head(All_IUCN_names)
-
-# Fix names more than one match for ITIS
-need_check <- filter_name('Camelus ferus','itis')  %>%
-  mutate(acceptedNameUsage = get_names(acceptedNameUsageID)) %>% 
-  select(scientificName, taxonomicStatus, acceptedNameUsage, acceptedNameUsageID)
-
-head(need_check)
-
-All_IUCN_names[All_IUCN_names$Scientific == 'Camelus ferus',]
-All_IUCN_names[All_IUCN_names$Scientific == 'Camelus ferus',2] <- need_check$acceptedNameUsageID[1]
-All_IUCN_names[All_IUCN_names$Scientific == 'Camelus ferus',3] <- need_check$acceptedNameUsage[1]
-
-# Fix names more than one match for WD
-
-need_check_2 <- filter_name(c('Baiyankamys shawmayeri','Baiyankamys habbema'),'wd',version = 2019) %>%
-  mutate(acceptedNameUsage = get_names(acceptedNameUsageID,'wd',version = 2019)) %>% 
-  select(scientificName, taxonomicStatus, acceptedNameUsage, acceptedNameUsageID)
-
-head(need_check_2)
-
-All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys shawmayeri',]
-All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys shawmayeri',4] <- need_check_2$acceptedNameUsageID[1]
-All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys shawmayeri',5] <- need_check_2$acceptedNameUsage[1]
-
-All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys habbema',]
-All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys habbema',4] <- need_check_2$acceptedNameUsageID[3]
-All_IUCN_names[All_IUCN_names$Scientific == 'Baiyankamys habbema',5] <- need_check_2$acceptedNameUsage[3]
-
-
+not_2020
+length(not_2020)
 
 
 
