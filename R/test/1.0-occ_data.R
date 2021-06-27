@@ -175,7 +175,7 @@ head(XSBN_effort)
 XSBN_dep <- XSBN_effort %>% dplyr::select(projectID=PA, deploymentID=NO, Longitude=GPS_X, Latitude=GPS_Y)
 
 XSBN_image <- XSBN %>% dplyr::select(deploymentID=camera, dateTimeCaptured=datetime,speciesScientificName=scientfic_name) %>% 
-  mutate(date=as.Date((dateTimeCaptured))) %>% mutate(year=year(date)) %>% 
+  mutate(date=lubridate::mdy(dateTimeCaptured)) %>% mutate(year=year(date)) %>% 
   dplyr::select(deploymentID,speciesScientificName,year) %>% unique()                     
 XSBN_image$deploymentID <- toupper(XSBN_image$deploymentID)
 

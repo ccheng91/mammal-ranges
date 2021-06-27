@@ -2,6 +2,7 @@
 library(dplyr)
 df <- read.csv("result/2.5-modelling_df_all_covs.csv")
 
+head(df)
 df$diet.breadth <- scale(df$diet.breadth)
 
 df$BodyMass.Value <- scale(df$BodyMass.Value)
@@ -57,7 +58,7 @@ omi <- omi %>% dplyr::select(type, speciesScientificName ,ForStrat.Value , Activ
                                Tree_mean , elevation , IUCN_frq , IUCN_year , sampling_effort_t)
 
 z <- glm(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value + realm + 
-           Tree_mean + elevation + IUCN_frq + IUCN_year + sampling_effort_t,family=binomial(),data=omi)
+           Tree_mean + elevation + IUCN_frq + IUCN_year + sampling_effort_t, family=binomial(),data=omi)
 
 summary(z)
 

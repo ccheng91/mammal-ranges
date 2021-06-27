@@ -7,6 +7,9 @@ library(dplyr)
 # Camera trap species 
 spp_df_all <- read.csv("result/occ_dataframe_taxon_fixed.csv") 
  
+spp_df_all_projID <- read.csv("result/occ_dataframe_with_projectID.csv")
+
+
 # Range of all Terrestrial mammal downloaded in 2017
 #TERR_mal <- st_read("data/TERRESTRIAL_MAMMALS/TERRESTRIAL_MAMMALS.shp")
 
@@ -16,6 +19,29 @@ terr_mal_new <- st_read("data/MAMMALS_TERRESTRIAL_ONLY/MAMMALS_TERRESTRIAL_ONLY.
 # Range of freshwater mammal downloaded in 2021
 # This can be download at (https://www.iucnredlist.org/resources/spatial-data-download)
 terr_mal_water <- st_read("data/MAMMALS_FRESHWATER/MAMMALS_FRESHWATER.shp")
+
+
+###### test
+
+all_speices <- unique(spp_df_all_projID$speciesScientificName) # Camera detected species
+
+all_mammal_New <- unique(terr_mal_new$binomial) #2020
+all_mammal_water <- unique(terr_mal_water$binomial) # water
+
+all_mammal <- unique(c(all_mammal_New,all_mammal_water))
+
+#
+not_2020 <- all_speices[all_speices %in% all_mammal == F]
+
+
+not_2020
+length(not_2020)
+
+not_2020
+
+
+####### test
+
 
 # Step 1. - match names
 
@@ -97,7 +123,7 @@ spp_df_all$speciesScientificName[which(spp_df_all$speciesScientificName =="Puma 
 spp_df_all$speciesScientificName[which(spp_df_all$speciesScientificName == "Giraffa tippelskirchi")]  <-  "Giraffa camelopardalis"
 spp_df_all$speciesScientificName[which(spp_df_all$speciesScientificName == "Senegal bushbaby")]  <-  "Galago senegalensis"
  
- # Wrong spp.
+# Wrong spp.
 spp_df_all <- spp_df_all %>% 
   filter(!grepl("unknown",speciesScientificName)) %>% 
   filter( speciesScientificName != "Canis lupus familiaris") %>% 
@@ -109,7 +135,10 @@ spp_df_all <- spp_df_all %>%
   filter( speciesScientificName !=  "Bos frontalis") %>%
   filter( speciesScientificName !=  "Peromyscus sp.") %>% 
   filter( speciesScientificName !=  "Sagittarius serpentarius")
- write.csv(spp_df_all,"result/occ_dataframe_taxon_fixed.csv",row.names = F)
+
+
+
+# write.csv(spp_df_all,"result/occ_dataframe_taxon_fixed.csv",row.names = F)
 
 
 ## Everything name should sync with IUCN name Including Elton & PanTHERIA name 
