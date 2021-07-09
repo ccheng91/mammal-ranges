@@ -1,7 +1,7 @@
 # Add covariates 2
 library(dplyr)
 #modelling_df <- read.csv("result/2.0-modelling_df_with_traits.csv")
-modelling_df <- read.csv("result/2.0-modelling_df_with_traits_emml_etc_added.csv")
+modelling_df <- read.csv("result/June2021/2.0-modelling_df_with_traits_emml_etc_added.csv")
 
 modelling_df$speciesScientificName
 
@@ -11,8 +11,10 @@ his <- rredlist::rl_history(modelling_df$speciesScientificName[1],key="29c88e9e8
 #
 spp <- unique(modelling_df$speciesScientificName)
 
-iucn_his <- data.frame(name=as.character(),frq=as.numeric(),year=as.numeric())
+iucn_his <- data.frame(name=as.character(),frq=as.numeric(),year=as.numeric(),IUCN_category =as.character())
 
+ca <- taxize::iucn_status(IUCN_category)
+names(ca)
 
 for(i in 1:length(spp)){
   his <- rredlist::rl_history(spp[i],key="29c88e9e867726644b28997693189b9a9301b21e4bdf0280d51b3006bebc6642")
@@ -27,11 +29,17 @@ for(i in 1:length(spp)){
 
 iucn_his[-which(iucn_his$frq =="NA_not_in_iucn"),]
 
-write.csv(iucn_his, "result/2.0-the_IUCN_history.csv", row.names = F)
+iucn_cat <- taxize::iucn_summary(iucn_his$name,key = "29c88e9e867726644b28997693189b9a9301b21e4bdf0280d51b3006bebc6642")
+iucn_category <- taxize::iucn_status(iucn_cat) %>% as.data.frame() %>% tibble::rownames_to_column(var="name") %>%  
+              purrr::set_names(c("name","IUCN_cat"))
+iucn_his <- left_join(iucn_his,iucn_category,by="name")
 
-names(iucn_his) <- c("speciesScientificName","IUCN_frq","IUCN_year")
+write.csv(iucn_his, "result/June2021/2.0-the_IUCN_history_category.csv", row.names = F)
+
+names(iucn_his) <- c("speciesScientificName","IUCN_frq","IUCN_year","IUCN_cat")
+head(iucn_his)
 head(modelling_df)
-
+ 
 modelling_df <- left_join(modelling_df,iucn_his,by="speciesScientificName") 
 modelling_df <- modelling_df %>%  filter(IUCN_frq != "NA_not_in_iucn") 
 
@@ -55,7 +63,7 @@ df <- modelling_df  %>% left_join(pre_df,by="projectID" )
 df[which(df$ForStrat.Value == "M"),]
 df <- df[-which(df$ForStrat.Value == "M"),] # remove marine spp
 
-write.csv(df,"result/2.5-modelling_df_all_covs.csv",row.names = F)
+write.csv(df,"result/June2021/2.5-modelling_df_all_covs.csv",row.names = F)
 
 
 

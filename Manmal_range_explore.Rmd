@@ -107,26 +107,27 @@ z2 <- glmer(type ~ x1 + x2 + x3 + ... (1|x4), family = binomial, data=com)
 
 ### Candidate variables
 
-| Variable                    | Description                                                                                 | Prediction                                                                                                                                      |
-|-----------------------------|---------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| [First tier variable]{.ul}  |                                                                                             |                                                                                                                                                 |
-| Body mass                   | Previous study found that body mass is associated with two types of error of IUCN range map | Body mass will have negative effect on both Commission and Omission errors: large mammal's distribution data is more accurate. Hence more match |
-| Realm                       | Previous studies show that well IUCN range map is more accurate in well studied region      | Some realm will have significantly better match. Realm inculdes Afrotropical, Indo-Malay, Nearctic, Neotropical                                 |
-| IUCN_frq                    | Total IUCN assessment of a species                                                          | Negative effect on both errors. More assessment                                                                                                 |
-| IUCN_year                   | Year of the latest IUCN assessment of a species                                             | Negative effect on both errors. Recent IUCN range map is more accurate                                                                          |
-| Camera trap sampling effort | Camera trap days                                                                            | Negative effect. The more sampling efforts less                                                                                                 |
-| [Second tier variable]{.ul} |                                                                                             |                                                                                                                                                 |
-| ForStrat.Value              | Forgoing stratum. Forgoing strata G (ground), S (sub-canopy), Ar (Arboreal)                 | Arboreal species has more error                                                                                                                 |
-| Activity Nocturnal          | Nocturnality: Nocturnal (1), other (0)                                                      | Positive effect                                                                                                                                 |
-| diet.breadth                | Number of diet a species has, 1 - 6. large -\> generalists                                  | Negative effect                                                                                                                                 |
-| Tree_mean                   | Three height: Index of habitat complexity. From 1.8 to 38.8 (m)                             | Positive effect                                                                                                                                 |
-| [Random effect]{.ul}        |                                                                                             |                                                                                                                                                 |
-| Species                     | Potential random effects                                                                    | Same species has same species covariates                                                                                                        |
-| ProjectID                   | Potential random effects 2                                                                  | Same sites has same site covariates                                                                                                             |
+| Variable                        | Description                                                                                                     | Prediction                                                                                                                                      |
+|---------------------------------|-----------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| Species trait                   |                                                                                                                 |                                                                                                                                                 |
+| Body mass                       | Previous study found that body mass is associated with two types of error of IUCN range map                     | Body mass will have negative effect on both Commission and Omission errors: large mammal's distribution data is more accurate. Hence more match |
+| Activity Nocturnal              | Nocturnality: Nocturnal (1), other (0)                                                                          | Positive effect                                                                                                                                 |
+| ForStrat                        | Foraging stratum. The vertical strata where a mammal species forages. G (ground), S (Scansorial), Ar (Arboreal) | Arboreal species has more error                                                                                                                 |
+| diet.breadth                    | Number of diet a species has, 1 - 6. large -\> generalists                                                      | Negative effect                                                                                                                                 |
+| Sampling effort related factors |                                                                                                                 |                                                                                                                                                 |
+| Realm                           | Previous studies show that well IUCN range map is more accurate in well studied region                          | Some realm will have significantly better match. Realm inculdes Afrotropical, Indo-Malay, Nearctic, Neotropical                                 |
+| IUCN_frq                        | Total IUCN assessment of a species                                                                              | Negative effect on both errors. More assessment                                                                                                 |
+| IUCN_year                       | Year of the latest IUCN assessment of a species                                                                 | Negative effect on both errors. Recent IUCN range map is more accurate                                                                          |
+| Camera trap sampling effort     | Camera trap days                                                                                                | Negative effect. The more sampling efforts less                                                                                                 |
+| Habitat related                 |                                                                                                                 |                                                                                                                                                 |
+| Tree_mean                       | Three height: Index of habitat complexity. From 1.8 to 38.8 (m)                                                 | Positive effect                                                                                                                                 |
+| [Random effect]{.ul}            |                                                                                                                 |                                                                                                                                                 |
+| Species                         | Potential random effects                                                                                        | Same species has same species covariates                                                                                                        |
+| ProjectID                       | Potential random effects 2                                                                                      | Same sites has same site covariates                                                                                                             |
 
 ## Rationale for random effects
 
-The first question is how many of the species are sampled in different sites (more than one time)? 
+The first question is how many of the species are sampled in different sites (more than one time)?
 
 ```{r echo=TRUE}
 #Species sample more than once
@@ -141,23 +142,23 @@ nrow(tab[which(tab$total  >= 3),])
 
 Species have same species covariates of interest. If **`r nrow(tab[which(tab$total  >= 1),])`** species are sampled more than once. This can a potential pseudoreplication.
 
-We also followed this tutorial to think a bit more about the random effect (https://bookdown.org/steve_midway/DAR/random-effects.html#should-i-consider-random-effects).
+We also followed this tutorial to think a bit more about the random effect (<https://bookdown.org/steve_midway/DAR/random-effects.html#should-i-consider-random-effects>).
 
-1. Can the factor(s) be viewed as a random sample from a probability distribution?
+1.  Can the factor(s) be viewed as a random sample from a probability distribution?
 
 Species can be viewed as a random sample of all species, site can be viewed as a random sample of sites. So **YES**.
 
-2. Does the intended scope of inference extend beyond the levels of a factor included in the current analysis to the entire population of a factor?
+2.  Does the intended scope of inference extend beyond the levels of a factor included in the current analysis to the entire population of a factor?
 
-We are interested in general relationship between species traits (i.e.bodymass) and the "match". Not just these 500 + species. So **YES**. 
+We are interested in general relationship between species traits (i.e.bodymass) and the "match". Not just these 500 + species. So **YES**.
 
-3. Are the coefficients of a given factor going to be modeled?
+3.  Are the coefficients of a given factor going to be modeled?
 
-If there is variation among species in probability of "matching". Then it is hypothesized that this might be due to species traits, we've added traits in our model. 
+If there is variation among species in probability of "matching". Then it is hypothesized that this might be due to species traits, we've added traits in our model.
 
 So **YES**.
 
-4. Is there a lack of statistical independence due to multiple observations from the same level within a factor over space and/or time?
+4.  Is there a lack of statistical independence due to multiple observations from the same level within a factor over space and/or time?
 
 YES, in our study, multiple observations (same species different place) existed for most of species.
 
@@ -219,7 +220,6 @@ aic.glmer3 <- AIC(logLik(m0.glmer3.com))
 aic.glm;aic.glmer1;aic.glmer2;aic.glmer3
 
 ```
-
 
 ### The AIC of the glmer3 object is smallest shows that including the two random intercepts (species + project) is justified.
 

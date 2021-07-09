@@ -1,6 +1,12 @@
 ## Modelling
 library(dplyr)
-df <- read.csv("result/2.5-modelling_df_all_covs.csv")
+library(lme4)
+
+rm(list=ls(all=TRUE))
+df <- read.csv("result/June2021/2.5-modelling_df_all_covs.csv") %>% unique()
+
+# filter again (species < 500)
+df <- df[-which(df$BodyMass.Value <=500),]
 
 head(df)
 df$diet.breadth <- scale(df$diet.breadth)
@@ -51,86 +57,201 @@ com$type[which(com$type == "B")] <- 0
 omi$type <- as.numeric(omi$type)
 com$type <- as.numeric(com$type)
 
-head(df)
-head(omi)
-library(lme4)
-omi <- omi %>% dplyr::select(type, speciesScientificName ,ForStrat.Value , Activity.Nocturnal , diet.breadth, BodyMass.Value , realm , 
-                               Tree_mean , elevation , IUCN_frq , IUCN_year , sampling_effort_t)
+length(which(df$type=="A"))
+length(which(df$type=="B"))
+length(which(df$type=="C"))
 
-z <- glm(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value + realm + 
-           Tree_mean + elevation + IUCN_frq + IUCN_year + sampling_effort_t, family=binomial(),data=omi)
+# prepare the table
+tab <- as.data.frame.matrix(table(df$speciesScientificName , df$projectID))
+tab$total <- rowSums(tab)
 
-summary(z)
+## instric exstric
+z.n <- glmer(type ~ 1+ 
+               (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
 
-simulationOutput1 <- DHARMa::simulateResiduals(fittedModel = z, plot = F)
-plot(simulationOutput1)
+z.f <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
+               IUCN_frq + IUCN_year +  realm + sampling_effort_t +
+               Tree_mean +
+               (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
+# speices
+z1 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
+# samplling
+z2 <- glmer(type ~ IUCN_frq + IUCN_year +  realm + sampling_effort_t + 
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)), data = omi )
+# habitat
+z3 <- glmer(type ~ Tree_mean +
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
 
+# speices + samplling
+z4 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
+              IUCN_frq + IUCN_year +  realm + sampling_effort_t + 
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
 
-names(omi)
+# speices + habitat
+z5 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
+              Tree_mean +
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
 
-fm1 <- glmer(type ~  ForStrat.Value + Activity.Nocturnal , diet.breadth, BodyMass.Value, realm, 
-             Tree_mean , elevation , IUCN_frq , IUCN_year , sampling_effort_t + (1|speciesScientificName),data = omi,family = binomial,control = glmerControl(optimizer = "bobyqa"))
+#samplling + habitat
+z6 <- glmer(type ~ IUCN_frq + IUCN_year +  realm + sampling_effort_t + 
+              Tree_mean +
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
 
+# for commission error 
 
-dd <- MuMIn::dredge(fm1)
+x.n <- glmer(type ~ 1+ 
+               (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = com )
 
+x.f <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
+               IUCN_frq + IUCN_year +  realm + sampling_effort_t +
+                Tree_mean +
+               (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = com )
 
-options(na.action = "na.omit")
+x1 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = com )
 
+x2 <- glmer(type ~ IUCN_frq + IUCN_year +  realm + sampling_effort_t + IUCN_cat+
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = com )
 
-z1 <- glm(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value + realm + Tree_mean + elevation,family=binomial(),data=com)
-
-summary(z1)
-
-length(unique(df$speciesScientificName))
-
-
-
-gz <- glmer(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value 
-            + realm + Tree_mean + elevation + (1 | projectID ), data = omi , family = binomial)
-
-summary(gz)
-
-
-gz1 <- glmer(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value +
-               IUCN_frq + IUCN_year + sampling_effort_t +
-              realm + Tree_mean + elevation + (1 | speciesScientificName ), data = omi , 
-             family = binomial,control = glmerControl(optimizer = "bobyqa"))
-
-options(na.action = "na.fail")
-dd <- MuMIn::dredge(gz1)
-  
-
-
-options(na.action = "na.omit")
-
-summary(gz1)
-print(gz1)
-
-
-se <- sqrt(diag(vcov(gz1)))
-# table of estimates with 95% CI
-(tab <- cbind(Est = fixef(gz1), LL = fixef(gz1) - 1.96 * se, UL = fixef(gz1) + 1.96 *
-                se))
-
-print(gz2)
-summary(gz2)
-
-gz5 <- glmer(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value 
-             + realm + Tree_mean + elevation + (1| speciesScientificName ) + (1| projectID), data = com , 
-             family = binomial,control = glmerControl(optimizer = "bobyqa"))
-
-print(gz5)
-summary(gz5)
+x3 <- glmer(type ~ Tree_mean +
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = com )
 
 
-m0.glm <-   glm(type ~ 1, family = binomial, data=com)
-m0.glmer <-  glmer(type ~ (1| speciesScientificName ), data = com, 
-                   family = binomial)
+# speices + samplling
+x4 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
+              IUCN_frq + IUCN_year +  realm + sampling_effort_t + 
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = com )
 
-aic.glmer <- AIC(logLik(m0.glmer))
-aic.glm <- AIC(logLik(m0.glm))
-aic.glmer; aic.glm
+# speices + habitat
+x5 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
+              Tree_mean +
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = com )
 
-null.id = -2 * logLik(m0.glm) + 2 * logLik(m0.glmer)
-pchisq(as.numeric(null.id), df=1, lower.tail=F) 
+#samplling + habitat
+x6 <- glmer(type ~ IUCN_frq + IUCN_year +  realm + sampling_effort_t + 
+              Tree_mean +
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = com )
+
+####################
+## Model selection #
+####################
+
+cant.st1 <- list(z.n,z.f,z1,z2,z3,z4,z5,z6)
+
+modnames1 <-  c("Null","Full","SpeicesTraits","Sampling","Habitat","SpeicesTraits + Sampling","SpeicesTraits + Habitat",
+                "Sampling + Habitat")
+
+modsel1 <- AICcmodavg::aictab(cant.st1,modnames1)
+
+
+cant.st2 <- list(x.n,x.f,x1,x2,x3,x4,x5,x6)
+
+modnames2 <-  c("Null","Full","SpeicesTraits","Sampling","Habitat","SpeicesTraits + Sampling","SpeicesTraits + Habitat",
+                "Sampling + Habitat")
+
+modsel2 <- AICcmodavg::aictab(cant.st2,modnames2)
+
+
+
+                
+
+####################
+
+
+
+
+
+
+
+
+
+#ITBD <- df[df$projectID=='ITBD',]
+#ITBD_moose <- df[df$speciesScientificName=='Alces alces',]
+#
+#head(ITBD_moose)
+#
+#head(df)
+#head(omi)
+#
+#omi <- omi %>% dplyr::select(type, speciesScientificName ,ForStrat.Value , Activity.Nocturnal , diet.breadth, BodyMass.Value , realm , 
+#                               Tree_mean , elevation , IUCN_frq , IUCN_year , sampling_effort_t)
+#
+#z <- glm(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value + realm + 
+#           Tree_mean + elevation + IUCN_frq + IUCN_year + sampling_effort_t, family=binomial(),data=omi)
+#
+#summary(z)
+#
+#simulationOutput1 <- DHARMa::simulateResiduals(fittedModel = z, plot = F)
+#plot(simulationOutput1)
+#
+#
+#names(omi)
+#
+#fm1 <- glmer(type ~  ForStrat.Value + Activity.Nocturnal , diet.breadth, BodyMass.Value, realm, 
+#             Tree_mean , elevation , IUCN_frq , IUCN_year , sampling_effort_t + (1|speciesScientificName),data = omi,family = binomial,control = glmerControl(optimizer = "bobyqa"))
+#
+#
+#dd <- MuMIn::dredge(fm1)
+#
+#
+#options(na.action = "na.omit")
+#
+#
+#z1 <- glm(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value + realm + Tree_mean + elevation,family=binomial(),data=com)
+#
+#summary(z1)
+#
+#length(unique(df$speciesScientificName))
+#
+#
+#
+#gz <- glmer(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value 
+#            + realm + Tree_mean + elevation + (1 | projectID ), data = omi , family = binomial)
+#
+#summary(gz)
+#
+#
+#gz1 <- glmer(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value +
+#               IUCN_frq + IUCN_year + sampling_effort_t +
+#              realm + Tree_mean + elevation + (1 | speciesScientificName ), data = omi , 
+#             family = binomial,control = glmerControl(optimizer = "bobyqa"))
+#
+#options(na.action = "na.fail")
+#dd <- MuMIn::dredge(gz1)
+#  
+#
+#
+#options(na.action = "na.omit")
+#
+#summary(gz1)
+#print(gz1)
+#
+#
+#se <- sqrt(diag(vcov(gz1)))
+## table of estimates with 95% CI
+#(tab <- cbind(Est = fixef(gz1), LL = fixef(gz1) - 1.96 * se, UL = fixef(gz1) + 1.96 *
+#                se))
+#
+#print(gz2)
+#summary(gz2)
+#
+#gz5 <- glmer(type ~ ForStrat.Value + Activity.Nocturnal + diet.breadth+ BodyMass.Value 
+#             + realm + Tree_mean + elevation + (1| speciesScientificName ) + (1| projectID), data = com , 
+#             family = binomial,control = glmerControl(optimizer = "bobyqa"))
+#
+#print(gz5)
+#summary(gz5)
+#
+#
+#m0.glm <-   glm(type ~ 1, family = binomial, data=com)
+#m0.glmer <-  glmer(type ~ (1| speciesScientificName ), data = com, 
+#                   family = binomial)
+#
+#aic.glmer <- AIC(logLik(m0.glmer))
+#aic.glm <- AIC(logLik(m0.glm))
+#aic.glmer; aic.glm
+#
+#null.id = -2 * logLik(m0.glm) + 2 * logLik(m0.glmer)
+#pchisq(as.numeric(null.id), df=1, lower.tail=F) 
+#

@@ -396,7 +396,7 @@ anchor_names
 
 write.csv(anchor_names,"result/anchor_names_for_spps_found_no_traits.csv",row.names = F)
 
-anchor_names <- read.csv("result/anchor_names_for_spps_found_no_traits.csv")
+
 
 
 

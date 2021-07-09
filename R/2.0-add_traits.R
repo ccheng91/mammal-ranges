@@ -3,7 +3,7 @@ library(dplyr)
 
 # load df
 # modelling_df <- read.csv("result/modeling_df.csv")
-modelling_df <- read.csv("result/modeling_df_add_emml_etc.csv")
+modelling_df <- read.csv("result/June2021/1.0-modeling_df_add_emml_etc.csv")
 
 which(modelling_df$speciesScientificName == "All_in")
 # add species traits
@@ -202,10 +202,10 @@ modelling_df_final <- rbind(remaining, missing_trait_filling)
 head(modelling_df_final)
 
 #write.csv(modelling_df_final,"result/2.0-modelling_df_with_traits.csv",row.names = F)
-write.csv(modelling_df_final,"result/2.0-modelling_df_with_traits_emml_etc_added.csv",row.names = F)
+write.csv(modelling_df_final,"result/June2021/2.0-modelling_df_with_traits_emml_etc_added.csv",row.names = F)
 
 
-
+s
 
 
 

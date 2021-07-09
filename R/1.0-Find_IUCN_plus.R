@@ -8,7 +8,8 @@
 # IUCN + , camera +
 # IUCN - , camera +
 
-#load package
+#load packages
+
 rm(list=ls(all=TRUE))
 library(ggplot2)
 library(sf)
@@ -23,15 +24,13 @@ terr_mal_water <- st_read("data/MAMMALS_FRESHWATER/MAMMALS_FRESHWATER.shp")
 terr_mal_new <- rbind(TERR_mal,terr_mal_water)
 
 # Camera trap data  
-spp_df_all <- read.csv("result/occ_dataframe_taxon_fixed.csv") 
 
 #spp_df_all[grep("XSBN", spp_df_all$projectID),]
 
 spp_df_all[grep("EMML_SMTB", spp_df_all$deploymentID),]
 
-spp_df_all_proj_id <- read.csv("result/occ_dataframe_with_projectID.csv") %>% dplyr::select(deploymentID,projectID) %>% unique()
+spp_df_all  <- read.csv("result/June2021/0.5-occ_dataframe_taxon_fixed_26June21.csv") %>% unique()
 
-spp_df_all <- left_join(spp_df_all, spp_df_all_proj_id, by="deploymentID")
 
 head(spp_df_all)
 # Total NO. IUCN mammal species  
@@ -50,6 +49,7 @@ fun_data_more_than_500 <- fun_data %>% filter(BodyMass.Value >= 500)
 # Filter range maps
 # By order
 terr_mal_new$order_ <- stringr::str_to_title(terr_mal_new$order_)
+
 filter_TERR_mal <-  terr_mal_new %>% 
   filter(order_ != "Chiroptera") %>% # bats
   filter(order_ != "Scandentia") %>% # Colugos
@@ -209,43 +209,7 @@ nrow(modelling_df)
 modelling_df[which(modelling_df$speciesScientificName == "Muntiacus vaginalis"),]
 
 
-write.csv(modelling_df, "result/modeling_df_add_emml_etc.csv", row.names = F)
-
-
-
-
-
-
-
-cam_data <- non_round_cam[which(non_round_cam$projectID ==  "XSBN_BL"),]
-shap_one <- shap[which(shap$projectID ==  "XSBN_BL"),]
-
-plot(shap_one)
-
-shap_one$projectID
-
-croped <- st_intersects(filter_TERR_mal, shap_one, sparse = FALSE)
-
-IUCN_spp <- unique(unique(filter_TERR_mal$binomial[croped]))
-
-muntjac <- filter_TERR_mal[which(filter_TERR_mal$binomial=="Muntiacus vaginalis"),]
-
-plot(muntjac[1])
-plot(st_geometry(shap_one[1], col = 'red', add = TRUE))
-
-croped <- st_intersects(muntjac,shap_one, sparse = FALSE)
-
-IUCN_spp_try <- unique(unique(muntjac$binomial[croped]))
-
-
-st_crs(muntjac)
-st_crs(shap_one)
-
-plot(st_geometry(nc)[1], col = 'red', add = TRUE)
-
-plot(muntjac[1], shap_one)
-
-
+write.csv(modelling_df, "result/June2021/1.0-modeling_df_add_emml_etc.csv", row.names = F)
 
 
 
