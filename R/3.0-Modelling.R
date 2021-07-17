@@ -47,6 +47,26 @@ max(df$elevation,na.rm = T)
 omi <- df %>% filter(type == "A" | type == "B")
 com <- df %>% filter(type == "C" | type == "B")
 
+##############################################
+# Need descriptive analysis about omission ##
+#############################################
+type_a <-  df %>% filter(type == "A")
+table(type_a$speciesScientificName)
+length(unique(type_a$speciesScientificName))
+
+library(sf)
+TERR_mal <- st_read("data/MAMMALS_TERRESTRIAL_ONLY/MAMMALS_TERRESTRIAL_ONLY.shp")
+
+Herpestes_urva <- TERR_mal[TERR_mal$binomial  =="Herpestes urva",]
+plot(Herpestes_urva)
+
+type_a[type_a$speciesScientificName =="Herpestes urva",]
+
+
+type_a[type_a$speciesScientificName =="Sus scrofa",]
+##############################################
+# Need descriptive analysis about omission ##
+#############################################
 
 omi$type[which(omi$type == "A")] <- 1
 com$type[which(com$type == "C")] <- 1
@@ -152,9 +172,10 @@ modnames2 <-  c("Null","Full","SpeicesTraits","Sampling","Habitat","SpeicesTrait
 
 modsel2 <- AICcmodavg::aictab(cant.st2,modnames2)
 
+write.csv(modsel1,"result/June2021/3.0-modelsel_omission.csv",row.names = F)
+write.csv(modsel2,"result/June2021/3.0-modelsel_commission.csv",row.names = F)
+              
 
-
-                
 
 ####################
 
