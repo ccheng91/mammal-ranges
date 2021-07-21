@@ -50,15 +50,25 @@ com <- df %>% filter(type == "C" | type == "B")
 ##############################################
 # Need descriptive analysis about omission ##
 #############################################
-type_a <-  df %>% filter(type == "A")
+type_a <-  df %>% filter(type == "A") 
 table(type_a$speciesScientificName)
 length(unique(type_a$speciesScientificName))
 
 library(sf)
 TERR_mal <- st_read("data/MAMMALS_TERRESTRIAL_ONLY/MAMMALS_TERRESTRIAL_ONLY.shp")
+shap <- st_read("data/all_in_one_folder_OCT2019/All_area_shape_NOV2020.shp")
 
-Herpestes_urva <- TERR_mal[TERR_mal$binomial  =="Herpestes urva",]
+EMML_DYTP <- shap[shap$projectID == "EMML_DYTP",]
+Herpestes_urva <- TERR_mal[TERR_mal$binomial  == "Herpestes urva",]
+
+croped <- st_intersects(Herpestes_urva, EMML_DYTP, sparse = FALSE)
+
+
+IUCN_spp <- unique(Herpestes_urva$binomial[croped])
+
 plot(Herpestes_urva)
+
+plot(Herpestes_urva[3,])
 
 type_a[type_a$speciesScientificName =="Herpestes urva",]
 
@@ -92,7 +102,7 @@ z.n <- glmer(type ~ 1+
 z.f <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
                IUCN_frq + IUCN_year +  realm + sampling_effort_t +
                Tree_mean +
-               (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
+               (1|speciesScientificName) + (1|projectID), family = binomial, glmerControl(optimizer ='optimx', optCtrl=list(method='nlminb')), data = omi )
 # speices
 z1 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
               (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
@@ -178,9 +188,10 @@ write.csv(modsel2,"result/June2021/3.0-modelsel_commission.csv",row.names = F)
 
 
 ####################
+## cater plot ######
+####################
 
-
-
+library(ggplot2)
 
 
 

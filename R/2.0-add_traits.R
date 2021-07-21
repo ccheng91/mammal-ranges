@@ -205,7 +205,7 @@ head(modelling_df_final)
 write.csv(modelling_df_final,"result/June2021/2.0-modelling_df_with_traits_emml_etc_added.csv",row.names = F)
 
 
-s
+
 
 
 

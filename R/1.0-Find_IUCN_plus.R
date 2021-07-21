@@ -66,9 +66,10 @@ small_mammal <- unique(fun_data_500$Scientific)
 filter_TERR_mal <- filter_TERR_mal %>%
   filter(binomial %notin% small_mammal) 
 
-# By IUCN range map type only use extent
+# By IUCN range map type only use extent & possiable extent
+
 filter_TERR_mal <- filter_TERR_mal %>%
-  filter(presence == 1) 
+  filter(presence == 1 | presence == 2 | presence == 3) 
 
 # Calculate the IUCN vs camera match type
 # Use TEAM data as an example
@@ -171,10 +172,10 @@ for (i in 1:length(non_round_proj)){
   croped <- st_intersects(filter_TERR_mal, shap_one, sparse = FALSE)
   
   cam_spp <-  unique(cam_data$speciesScientificName)
-  IUCN_spp <- unique(unique(filter_TERR_mal$binomial[croped]))
+  IUCN_spp <- unique(filter_TERR_mal$binomial[croped])
   
   both_have <- cam_spp[cam_spp %in% IUCN_spp] 
-  cam_only <- cam_spp[!(cam_spp%in%both_have)] 
+  cam_only <- cam_spp[!(cam_spp %in% both_have)] 
   IUCN_only <- IUCN_spp[!(IUCN_spp %in% both_have)]
   
   # If no camera species is in IUCN, that means a wrong match
@@ -207,10 +208,11 @@ modelling_df <- modelling_df %>% dplyr::filter(speciesScientificName != "All_in"
 
 nrow(modelling_df)
 modelling_df[which(modelling_df$speciesScientificName == "Muntiacus vaginalis"),]
+modelling_df[which(modelling_df$speciesScientificName == "Herpestes urva"),]
 
+#write.csv(modelling_df, "result/June2021/1.0-modeling_df_add_emml_etc.csv", row.names = F)
 
-write.csv(modelling_df, "result/June2021/1.0-modeling_df_add_emml_etc.csv", row.names = F)
-
+write.csv(modelling_df, "result/June2021/1.0-modeling_df_with_present_3.csv", row.names = F)
 
 
 
@@ -218,58 +220,65 @@ write.csv(modelling_df, "result/June2021/1.0-modeling_df_add_emml_etc.csv", row.
 # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run #
 ###################################################################################################################################
 
-
-#####################
-# TEAM project only #
-#####################
-TEAM_shap <- shap[grep("TEAMS", shap$projectID),]
-TEAM <- spp_df_all[grep("TEAMS", spp_df_all$deploymentID),]
+########################
+# test type A species ##
+########################
 
 
 modelling_df <- data.frame()
+i = which(non_round_proj == "EMML_DYTP")
 
-for (i in 1:length(TEAM_projectID)){
+  # Find the camera species 
   
-  three_letter <- substr(TEAM_projectID[i], 7,9)
-  TEAM_cam_data <- TEAM[grep(three_letter, TEAM$deploymentID),]
-  TEAM_shap_one <- TEAM_shap[grep(three_letter, TEAM_shap$projectID),]
-  TEAM_shap_one$projectID
-  croped <- st_intersects(filter_TERR_mal[i], TEAM_shap_one, sparse = FALSE)
+  cam_data <- non_round_cam[which(non_round_cam$projectID == non_round_proj[i]),]
+  shap_one <- shap[which(shap$projectID ==  non_round_proj[i]),]
   
-  cam_spp <-  unique(TEAM_cam_data$speciesScientificName)
-  IUCN_spp <- unique(unique(filter_TERR_mal$binomial[croped]))
+  shap_one$projectID
+  
+  plot(shap_one)
+  
+  Herpestes_urva <- filter_TERR_mal[filter_TERR_mal$binomial ==  "Herpestes urva",]
+  plot(Herpestes_urva)
+  crop_test <-  st_intersects(Herpestes_urva, shap_one, sparse = FALSE)
+  
+  croped <- st_intersects(filter_TERR_mal, shap_one, sparse = FALSE)
+  croped[1720:1725]
+  
+  cam_spp <-  unique(cam_data$speciesScientificName)
+  IUCN_spp <- unique(filter_TERR_mal$binomial[croped])
+  
+  which(IUCN_spp == "Herpestes urva")
   
   both_have <- cam_spp[cam_spp %in% IUCN_spp] 
-  cam_only <- cam_spp[!(cam_spp%in%both_have)] 
+  cam_only <- cam_spp[!(cam_spp %in% both_have)] 
   IUCN_only <- IUCN_spp[!(IUCN_spp %in% both_have)]
- 
+  
   # If no camera species is in IUCN, that means a wrong match
-   if(rlang::is_empty(both_have)==F){
-     both_have_df <- data.frame(speciesScientificName=both_have,type="B", projectID=TEAM_shap_one$projectID)
-   } else{
-     both_have_df <- data.frame(speciesScientificName="Wrong_loca",type="NA", projectID=TEAM_shap_one$projectID)
-   }
-  
-  # If all camera species is in IUCN 
-  if(rlang::is_empty(cam_only)==F){
-    cam_only_df <- data.frame(speciesScientificName=cam_only,type="A", projectID=TEAM_shap_one$projectID)
+  if(rlang::is_empty(both_have)){
+    both_have_df <- data.frame(speciesScientificName="Wrong_loca",type="NA", projectID=shap_one$projectID)
+    IUCN_only_df <- data.frame(speciesScientificName="Wrong_loca",type="NA", projectID=shap_one$projectID)
+    cam_only_df <- data.frame(speciesScientificName="Wrong_loca",type="NA", projectID=shap_one$projectID)
+    
+    # If All camera species is in IUCN, that means all in
+  } else if(rlang::is_empty(cam_only)){
+    
+    cam_only_df <- data.frame(speciesScientificName="All_in",type="NA", projectID=shap_one$projectID)
+    IUCN_only_df <- data.frame(speciesScientificName=IUCN_only,type="C", projectID=shap_one$projectID)
+    
+    # Normal 
   } else{
-    cam_only_df <- data.frame(speciesScientificName="All_in",type="NA", projectID=TEAM_shap_one$projectID)
+    cam_only_df <- data.frame(speciesScientificName=cam_only,type="A", projectID=shap_one$projectID)
+    both_have_df <- data.frame(speciesScientificName=both_have,type="B", projectID=shap_one$projectID)
+    IUCN_only_df <- data.frame(speciesScientificName=IUCN_only,type="C", projectID=shap_one$projectID)
   }
-
-  IUCN_only_df <- data.frame(speciesScientificName=IUCN_only,type="C", projectID=TEAM_shap_one$projectID)
-  modelling_df <- rbind(modelling_df,cam_only_df,both_have_df,IUCN_only_df)
   
-}
-
-nrow(modelling_df)
-modelling_df <- modelling_df %>% dplyr::filter(speciesScientificName != "All_in")
-nrow(modelling_df)
+  modelling_df <- rbind(modelling_df,cam_only_df,both_have_df,IUCN_only_df)
 
 
 
-####
 
-write.csv(modelling_df, "result/modeling_df.csv", row.names = F)
+###################################################################################################################################
+# Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run # Do not run #
+###################################################################################################################################
 
 
