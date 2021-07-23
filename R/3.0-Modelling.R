@@ -23,7 +23,7 @@ df$Tree_mean <- scale(df$Tree_mean)
 
 df$IUCN_year <- scale(as.numeric(df$IUCN_year))
 
-df$IUCN_frq <- as.numeric(df$IUCN_frq)
+df$IUCN_frq <-  scale(as.numeric(df$IUCN_frq))
 
 df$sampling_effort_t <- scale(df$sampling_effort_t)
 
@@ -184,7 +184,6 @@ modsel2 <- AICcmodavg::aictab(cant.st2,modnames2)
 
 write.csv(modsel1,"result/June2021/3.0-modelsel_omission.csv",row.names = F)
 write.csv(modsel2,"result/June2021/3.0-modelsel_commission.csv",row.names = F)
-              
 
 
 ####################
@@ -193,8 +192,16 @@ write.csv(modsel2,"result/June2021/3.0-modelsel_commission.csv",row.names = F)
 
 library(ggplot2)
 
+summary(z3)
+       
+estimate <- fixef(x.f)
+names(estimate)
+as.data.frame(estimate)
 
+data.frame(name=names(estimate), estimate=unname(estimate))
 
+confint.merMod(x.f, method = "Wald")
+fff <- as.data.frame(t(confint.merMod(x.f , method = "Wald")))
 
 
 

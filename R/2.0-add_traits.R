@@ -3,7 +3,9 @@ library(dplyr)
 
 # load df
 # modelling_df <- read.csv("result/modeling_df.csv")
-modelling_df <- read.csv("result/June2021/1.0-modeling_df_add_emml_etc.csv")
+# modelling_df <- read.csv("result/June2021/1.0-modeling_df_add_emml_etc.csv")
+modelling_df <- read.csv("result/June2021/1.0-modeling_df_with_present_3.csv")
+
 
 which(modelling_df$speciesScientificName == "All_in")
 # add species traits
@@ -75,7 +77,7 @@ elton_mam <- speices_trait %>% dplyr::select(Scientific=speciesScientificName ) 
 
 need_filter_el <- taxadb::filter_name("Spermophilus saturatus", "itis") %>% 
   mutate(acceptedNameUsage = get_names(acceptedNameUsageID)) %>% 
-  select(scientificName, taxonomicStatus, acceptedNameUsage, acceptedNameUsageID)
+  dplyr::select(scientificName, taxonomicStatus, acceptedNameUsage, acceptedNameUsageID)
 
 elton_mam[elton_mam$Scientific == "Spermophilus saturatus",]
 elton_mam[elton_mam$Scientific == "Spermophilus saturatus",2] <- need_filter_el$acceptedNameUsageID[1]
