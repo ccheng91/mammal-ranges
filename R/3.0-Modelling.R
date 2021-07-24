@@ -27,6 +27,9 @@ df$IUCN_frq <-  scale(as.numeric(df$IUCN_frq))
 
 df$sampling_effort_t <- scale(df$sampling_effort_t)
 
+df$ForStrat.Value <- relevel(as.factor(df$ForStrat.Value), ref = "G" )
+
+class(df$ForStrat.Value)
 
 df <- df[-which(is.na(df$elevation)==T),]
 df <- df[-which(is.na(df$Activity.Nocturnal)==T),]
@@ -116,7 +119,7 @@ z3 <- glmer(type ~ Tree_mean +
 # speices + samplling
 z4 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
               IUCN_frq + IUCN_year +  realm + sampling_effort_t + 
-              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
+              (1|speciesScientificName) + (1|projectID), family = binomial, glmerControl(optimizer ='optimx', optCtrl=list(method='nlminb')), data = omi )
 
 # speices + habitat
 z5 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
@@ -192,7 +195,7 @@ write.csv(modsel2,"result/June2021/3.0-modelsel_commission.csv",row.names = F)
 
 library(ggplot2)
 
-summary(z3)
+summary(x.f)
        
 estimate <- fixef(x.f)
 names(estimate)
@@ -203,7 +206,30 @@ data.frame(name=names(estimate), estimate=unname(estimate))
 confint.merMod(x.f, method = "Wald")
 fff <- as.data.frame(t(confint.merMod(x.f , method = "Wald")))
 
+pr <- ggeffects::ggpredict(x.f, c("ForStrat.Value"), type = "fixed")
 
+plot(pr)
+
+pr2 <- ggeffects::ggpredict(x.f, c("IUCN_frq"), type = "fixed")
+
+
+
+## set x-axis to original scale
+
+unscale(pr2$x)
+df.ori <- read.csv("result/June2021/2.5-modelling_df_all_covs.csv") %>% unique()
+IUCN_frq <- scale(as.numeric(df.ori$IUCN_frq))
+attr(IUCN_frq,'scaled:scale')
+
+pr2$x <- pr2$x * attr(IUCN_frq, 'scaled:scale') + attr(IUCN_frq, 'scaled:center')
+
+library(ggplot2)
+plot(pr2) +labs(
+  x = "IUCN assessment frequency (times)", 
+  y = "Probabilities", 
+  title = "Predicted probabilities of commission error")
+
+max(df.ori$IUCN_frq)
 
 #ITBD <- df[df$projectID=='ITBD',]
 #ITBD_moose <- df[df$speciesScientificName=='Alces alces',]
