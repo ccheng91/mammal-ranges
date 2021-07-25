@@ -3,9 +3,7 @@ library(dplyr)
 
 # load df
 # modelling_df <- read.csv("result/modeling_df.csv")
-# modelling_df <- read.csv("result/June2021/1.0-modeling_df_add_emml_etc.csv")
-modelling_df <- read.csv("result/June2021/1.0-modeling_df_with_present_3.csv")
-
+modelling_df <- read.csv("result/June2021/1.0-modeling_df_add_emml_etc.csv")
 
 which(modelling_df$speciesScientificName == "All_in")
 # add species traits

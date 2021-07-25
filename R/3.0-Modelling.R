@@ -54,6 +54,8 @@ com <- df %>% filter(type == "C" | type == "B")
 # Need descriptive analysis about omission ##
 #############################################
 type_a <-  df %>% filter(type == "A") 
+type_b <-  df %>% filter(type == "B") 
+type_c <-  df %>% filter(type == "C") 
 table(type_a$speciesScientificName)
 length(unique(type_a$speciesScientificName))
 
@@ -111,7 +113,7 @@ z1 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.No
               (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
 # samplling
 z2 <- glmer(type ~ IUCN_frq + IUCN_year +  realm + sampling_effort_t + 
-              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)), data = omi )
+              (1|speciesScientificName) + (1|projectID), family = binomial,control=glmerControl(optimizer="bobyqa"), data = omi )
 # habitat
 z3 <- glmer(type ~ Tree_mean +
               (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
@@ -119,7 +121,7 @@ z3 <- glmer(type ~ Tree_mean +
 # speices + samplling
 z4 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
               IUCN_frq + IUCN_year +  realm + sampling_effort_t + 
-              (1|speciesScientificName) + (1|projectID), family = binomial, glmerControl(optimizer ='optimx', optCtrl=list(method='nlminb')), data = omi )
+              (1|speciesScientificName) + (1|projectID), family = binomial, control=glmerControl(optimizer="bobyqa"), data = omi )
 
 # speices + habitat
 z5 <- glmer(type ~ BodyMass.Value + ForStrat.Value + diet.breadth  + Activity.Nocturnal + 
@@ -206,12 +208,33 @@ data.frame(name=names(estimate), estimate=unname(estimate))
 confint.merMod(x.f, method = "Wald")
 fff <- as.data.frame(t(confint.merMod(x.f , method = "Wald")))
 
+
+
+# plot Foraging Strata
 pr <- ggeffects::ggpredict(x.f, c("ForStrat.Value"), type = "fixed")
 
-plot(pr)
+png(filename = "plot/Foraging Strata VS commission error.png",width = 480, height = 480)
+plot(pr)+labs(
+  x = "Foraging Strata", 
+  y = "Probabilities", 
+  title = "Predicted probabilities of commission error") #+ scale_x_continuous(labels = c("G"="four", "Ar"="six", "S"="eight"))
 
+dev.off()
+
+## Realm 
+
+pr3 <- ggeffects::ggpredict(x.f, c("realm"), type = "fixed")
+
+#png(filename = "plot/Realm VS commission error.png",width = 480, height = 480)
+plot(pr3) + labs(
+  x = "Realm", 
+  y = "Probabilities", 
+  title = "Predicted probabilities of commission error") #+ scale_x_continuous(labels = c("G"="four", "Ar"="six", "S"="eight"))
+dev.off()
+
+
+## IUCN frquncy
 pr2 <- ggeffects::ggpredict(x.f, c("IUCN_frq"), type = "fixed")
-
 
 
 ## set x-axis to original scale

@@ -66,10 +66,11 @@ small_mammal <- unique(fun_data_500$Scientific)
 filter_TERR_mal <- filter_TERR_mal %>%
   filter(binomial %notin% small_mammal) 
 
-# By IUCN range map type only use extent & possiable extent
+########################################
+# By IUCN range map type only use extent ###
 
 filter_TERR_mal <- filter_TERR_mal %>%
-  filter(presence == 1 | presence == 2 | presence == 3) 
+  filter(presence == 1 ) 
 
 # Calculate the IUCN vs camera match type
 # Use TEAM data as an example
@@ -210,9 +211,9 @@ nrow(modelling_df)
 modelling_df[which(modelling_df$speciesScientificName == "Muntiacus vaginalis"),]
 modelling_df[which(modelling_df$speciesScientificName == "Herpestes urva"),]
 
-#write.csv(modelling_df, "result/June2021/1.0-modeling_df_add_emml_etc.csv", row.names = F)
+write.csv(modelling_df, "result/June2021/1.0-modeling_df_add_emml_etc.csv", row.names = F)
 
-write.csv(modelling_df, "result/June2021/1.0-modeling_df_with_present_3.csv", row.names = F)
+
 
 
 
