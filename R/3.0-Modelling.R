@@ -200,15 +200,18 @@ library(ggplot2)
 summary(x.f)
        
 estimate <- fixef(x.f)
-names(estimate)
-as.data.frame(estimate)
 
-data.frame(name=names(estimate), estimate=unname(estimate))
+estimate <- data.frame(Variable=names(estimate), Estimate=unname(estimate))
 
-confint.merMod(x.f, method = "Wald")
-fff <- as.data.frame(t(confint.merMod(x.f , method = "Wald")))
+CI <- confint.merMod(x.f, method = "Wald")
+CI90 <-  confint.merMod(x.f, method = "Wald",level = 0.9) 
 
+CI <- data.frame(Variable=rownames(CI), lower=CI[,1] ,upper=CI[,2])
+CI90 <- data.frame(Variable=rownames(CI90), lower90=CI90[,1] ,upper90=CI90[,2])
 
+estimate <- left_join(estimate,CI,by="Variable")
+
+write.csv(estimate,"result/June2021/3.0-Estimate_omission.csv",row.names = F)
 
 # plot Foraging Strata
 pr <- ggeffects::ggpredict(x.f, c("ForStrat.Value"), type = "fixed")
