@@ -299,7 +299,7 @@ sjPlot::tab_model(z4)
 
 #### Forgoing stratum matters.
 
-The dummy level of the forgoing strata is ForStrat.Value [Arboreal] in our model. ForStrat.Value [Ground] and ForStrat.Value [Sub-canopy] have negative effects `-1.70` and `-2.78` compare to ForStrat.Value [Arboreal]. This means we are more likely to get a mismatch for arboreal species.
+The dummy level of the foraging strata is ForStrat.Value [Arboreal] in our model. ForStrat.Value [Ground] and ForStrat.Value [Sub-canopy] have negative effects `-1.70` and `-2.78` compare to ForStrat.Value [Arboreal]. This means we are more likely to get a mismatch for arboreal species.
 
 This could indicate IUCN range map often over predict distribution of arboreal. But we cannot rule out the fact that camera trap can be less efficient in detecting arboreal species.
 

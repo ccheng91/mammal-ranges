@@ -27,10 +27,9 @@ terr_mal_new <- rbind(TERR_mal,terr_mal_water)
 
 #spp_df_all[grep("XSBN", spp_df_all$projectID),]
 
-spp_df_all[grep("EMML_SMTB", spp_df_all$deploymentID),]
-
 spp_df_all  <- read.csv("result/June2021/0.5-occ_dataframe_taxon_fixed_26June21.csv") %>% unique()
 
+spp_df_all[grep("EMML_SMTB", spp_df_all$deploymentID),]
 
 head(spp_df_all)
 # Total NO. IUCN mammal species  
@@ -172,8 +171,7 @@ for (i in 1:length(non_round_proj)){
   
   croped <- st_intersects(filter_TERR_mal, shap_one, sparse = FALSE)
   
-  cam_spp <-  unique(cam_data$speciesScientificName)
-  IUCN_spp <- unique(filter_TERR_mal$binomial[croped])
+ 
   
   both_have <- cam_spp[cam_spp %in% IUCN_spp] 
   cam_only <- cam_spp[!(cam_spp %in% both_have)] 
@@ -227,12 +225,14 @@ write.csv(modelling_df, "result/June2021/1.0-modeling_df_add_emml_etc.csv", row.
 
 
 modelling_df <- data.frame()
-i = which(non_round_proj == "EMML_DYTP")
+spp_df_all
+
+i = which(non_round_proj == "EMML_AS")
 
   # Find the camera species 
   
-  cam_data <- non_round_cam[which(non_round_cam$projectID == non_round_proj[i]),]
-  shap_one <- shap[which(shap$projectID ==  non_round_proj[i]),]
+  cam_data <- spp_df_all[which(spp_df_all$projectID ==  "EMML_AS"),]
+  shap_one <- shap[which(shap$projectID == "EMML_AS"),]
   
   shap_one$projectID
   

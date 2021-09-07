@@ -4,9 +4,28 @@ library(lme4)
 
 rm(list=ls(all=TRUE))
 df <- read.csv("result/June2021/2.5-modelling_df_all_covs.csv") %>% unique()
+df[which(df$speciesScientificName == "Rhynchocyon chrysopygus"),]
 
-# filter again (species < 500)
-df <- df[-which(df$BodyMass.Value <=500),]
+#################################
+# Final filter of the dataframe #
+#################################
+
+all_order <- read.csv("result/3.0-All_order.csv") %>% unique()
+
+# write.csv(all_order, "result/3.0-All_order.csv",row.names = F)
+
+df <- left_join(df, all_order, by="speciesScientificName") 
+
+df <- df %>% filter(order != "Scandentia") %>% # Colugos
+             filter(order != "Macroscelidea") %>% # Shrew opossum
+             filter(order != "Eulipotyphla") %>% 
+             filter(BodyMass.Value > 500) # filter again (species < 500)
+# df <- df[-which(df$BodyMass.Value<= 500),]
+
+##################################
+# Final filter of the dataframe ##
+##################################
+
 
 head(df)
 df$diet.breadth <- scale(df$diet.breadth)
@@ -31,8 +50,6 @@ df$ForStrat.Value <- relevel(as.factor(df$ForStrat.Value), ref = "G" )
 
 class(df$ForStrat.Value)
 
-df <- df[-which(is.na(df$elevation)==T),]
-df <- df[-which(is.na(df$Activity.Nocturnal)==T),]
 table(df$ForStrat.Value)
 table(df$realm)
 table(df$Activity.Nocturnal)
@@ -56,6 +73,23 @@ com <- df %>% filter(type == "C" | type == "B")
 type_a <-  df %>% filter(type == "A") 
 type_b <-  df %>% filter(type == "B") 
 type_c <-  df %>% filter(type == "C") 
+
+table(df$projectID)
+length(unique(df$speciesScientificName))
+length(unique(df$projectID))
+
+91/2181 * 100
+nrow(unique(type_a))
+length(unique(type_a$speciesScientificName))
+length(unique(type_a$projectID))
+
+df[grep("Hylobates",df$speciesScientificName),]
+df[grep("Macaca",df$speciesScientificName),]
+df[grep("Pongo",df$speciesScientificName),]
+ 
+df[grep("Ar",df$ForStrat.Value),]
+
+
 table(type_a$speciesScientificName)
 length(unique(type_a$speciesScientificName))
 
@@ -196,6 +230,9 @@ write.csv(modsel2,"result/June2021/3.0-modelsel_commission.csv",row.names = F)
 ####################
 
 library(ggplot2)
+summary(z3)
+confint.merMod(z3, method = "Wald")
+
 
 summary(x.f)
        
@@ -256,6 +293,25 @@ plot(pr2) +labs(
   title = "Predicted probabilities of commission error")
 
 max(df.ori$IUCN_frq)
+
+
+## Diet breadth
+pr1 <- ggeffects::ggpredict(x.f, c("diet.breadth"), type = "fixed")
+
+df.ori <- read.csv("result/June2021/2.5-modelling_df_all_covs.csv") %>% unique()
+diet.breadth <- scale(df.ori$diet.breadth)
+attr(diet.breadth,'scaled:scale')
+
+pr1$x <- pr1$x * attr(diet.breadth,'scaled:scale') + attr(diet.breadth,'scaled:center')
+
+png(filename = "plot/diet.breadth VS commission error.png",width = 480, height = 480)
+plot(pr1) +labs(
+  x = "Diet breadth", 
+  y = "Probabilities", 
+  title = "Predicted probabilities of commission error")
+dev.off()
+
+
 
 #ITBD <- df[df$projectID=='ITBD',]
 #ITBD_moose <- df[df$speciesScientificName=='Alces alces',]
